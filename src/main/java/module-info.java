@@ -17,6 +17,7 @@ open module de.dargmuesli.spotilist {
     requires mp3agic;
     requires org.apache.logging.log4j;
     requires org.kordamp.ikonli.javafx;
+    requires org.slf4j;
     requires se.michaelthelin.spotify;
 
     exports de.dargmuesli.spotilist.models;
