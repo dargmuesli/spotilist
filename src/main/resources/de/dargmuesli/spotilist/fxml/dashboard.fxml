@@ -23,4 +23,7 @@
         <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#addPlaylistMapping"
                 text="%new"/>
     </VBox>
+    <Button fx:id="reportGenerateButton" mnemonicParsing="false"
+            onAction="#generateReport" text="%reportGenerate" GridPane.columnIndex="1"
+            GridPane.halignment="CENTER" GridPane.rowIndex="4"/>
 </VBox>
