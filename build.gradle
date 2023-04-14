@@ -1,9 +1,11 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'java'
     id 'application'
-    id 'org.jetbrains.kotlin.jvm' version '1.6.21'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.6.21'
-    id 'org.openjfx.javafxplugin' version '0.0.13'
+    id 'org.jetbrains.kotlin.jvm' version '1.8.20'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.8.20'
+    id 'com.github.javafx-gradle-plugin' version 'v0.0.15-raoulsson'
 }
 
 group 'de.dargmuesli'
@@ -18,7 +20,7 @@ ext {
     ikonliVersion = '12.3.1'
     junitVersion = '5.9.2'
     kotlinCoroutineVersion = '1.6.4'
-    kotlinSerializationVersion = '1.4.1'
+    kotlinSerializationVersion = '1.5.0'
     log4jVersion = '2.20.0'
     mp3agicVersion = '0.9.1'
     spotifyWebApiJavaVersion = '8.0.0'
@@ -27,7 +29,7 @@ ext {
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
@@ -37,9 +39,7 @@ application {
 }
 
 [compileKotlin, compileTestKotlin].forEach {
-    it.kotlinOptions {
-        jvmTarget = '11'
-    }
+    it.compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
 }
 
 javafx {
@@ -67,12 +67,6 @@ test {
     useJUnitPlatform()
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-    kotlinOptions {
-        freeCompilerArgs += '-opt-in=kotlin.RequiresOptIn'
-    }
-}
-
 /* https://stackoverflow.com/a/50119235/4682621 ***********************************************************************/
 def generatedVersionDir = "${buildDir}/resources/main"
 
@@ -82,7 +76,7 @@ sourceSets {
     }
 }
 
-task generateVersionProperties {
+tasks.register('generateVersionProperties') {
     doLast {
         def propertiesFile = file "$generatedVersionDir/version.properties"
         propertiesFile.parentFile.mkdirs()
