@@ -4,8 +4,8 @@ plugins {
     id 'java'
     id 'application'
     id 'org.javamodularity.moduleplugin' version '1.8.15'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.23'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.23'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.24'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.24'
     id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
@@ -17,7 +17,7 @@ repositories {
 }
 
 ext {
-    googleApiYouTubeVersion = 'v3-rev20240417-2.0.0'
+    googleApiYouTubeVersion = 'v3-rev20240505-2.0.0'
     ikonliVersion = '12.3.1'
     junitVersion = '5.10.2'
     kotlinCoroutineVersion = '1.8.0'
