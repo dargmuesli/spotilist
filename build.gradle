@@ -19,7 +19,7 @@ repositories {
 ext {
     googleApiYouTubeVersion = 'v3-rev20240514-2.0.0'
     ikonliVersion = '12.3.1'
-    junitVersion = '5.10.2'
+    junitVersion = '5.10.3'
     kotlinCoroutineVersion = '1.8.1'
     kotlinSerializationVersion = '1.7.1'
     log4jVersion = '2.23.1'
