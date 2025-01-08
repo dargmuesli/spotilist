@@ -17,11 +17,11 @@ repositories {
 }
 
 ext {
-    googleApiYouTubeVersion = 'v3-rev20241203-2.0.0'
+    googleApiYouTubeVersion = 'v3-rev20250101-2.0.0'
     ikonliVersion = '12.3.1'
     junitVersion = '5.11.4'
     kotlinCoroutineVersion = '1.10.1'
-    kotlinSerializationVersion = '1.7.3'
+    kotlinSerializationVersion = '1.8.0'
     log4jVersion = '2.24.3'
     mp3agicVersion = '0.9.1'
     spotifyWebApiJavaVersion = '9.1.0'
