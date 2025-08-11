@@ -29,14 +29,30 @@ object SpotifyProvider :
     }
 
     override fun getProviderPlaylistItems(playlistId: String): List<se.michaelthelin.spotify.model_objects.specification.PlaylistTrack>? {
-        // TODO: Is there a meaningful way to use the cache here?
-        return getAllPagingItems(spotifyApi.getPlaylistsItems(playlistId))
-            .ifEmpty { null }
-            ?.onEach {
-                if (!SpotifyCache.playlistItemData.containsKey(it.track.id)) {
-                    SpotifyCache.playlistItemData[it.track.id] = it
-                }
+        return if (SpotifyCache.playlistItemMap.containsKey(playlistId)) {
+            SpotifyCache.playlistItemMap[playlistId]?.map {
+                SpotifyCache.playlistItemData[it]!!
             }
+        } else {
+            getAllPagingItems(spotifyApi.getPlaylistsItems(playlistId))
+                .ifEmpty { null }
+                ?.also {
+                    if (SpotifyCache.playlistItemMap.containsKey(playlistId)) {
+                        SpotifyCache.playlistItemMap.clear()
+                    }
+                }
+                ?.onEach {
+                    if (!SpotifyCache.playlistItemData.containsKey(it.track.id)) {
+                        SpotifyCache.playlistItemData[it.track.id] = it
+                    }
+
+                    if (!SpotifyCache.playlistItemMap.containsKey(playlistId)) {
+                        SpotifyCache.playlistItemMap[playlistId] = mutableListOf()
+                    }
+
+                    SpotifyCache.playlistItemMap[playlistId]!!.add(it.track.id)
+                }
+        }
     }
 
     override fun getPlaylist(playlistId: String): Playlist? {

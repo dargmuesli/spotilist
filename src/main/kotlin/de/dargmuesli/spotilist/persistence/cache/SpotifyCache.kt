@@ -22,6 +22,7 @@ import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack
 object SpotifyCache : IProviderCache<Playlist, PlaylistTrack> {
     override var playlistData: ObservableMap<String, Playlist> = observableHashMap()
     override var playlistItemData: ObservableMap<String, PlaylistTrack> = observableHashMap()
+    override var playlistItemMap: ObservableMap<String, MutableList<String>> = observableHashMap()
 
     val accessToken = SimpleStringProperty().also {
         it.addListener { _, _, _ -> Persistence.save(PersistenceTypes.CACHE) }
@@ -40,7 +41,7 @@ object SpotifyCache : IProviderCache<Playlist, PlaylistTrack> {
             encoder.encodeSerializableValue(
                 SpotifyCacheSurrogate.serializer(),
                 SpotifyCacheSurrogate(
-                    playlistData.toMap(), playlistItemData.toMap(),
+                    playlistData.toMap(), playlistItemData.toMap(), playlistItemMap.toMap(),
                     accessToken.value,
                     refreshToken.value,
                     accessTokenExpiresAt.value
@@ -52,6 +53,7 @@ object SpotifyCache : IProviderCache<Playlist, PlaylistTrack> {
             val spotifyCache = decoder.decodeSerializableValue(SpotifyCacheSurrogate.serializer())
             playlistData.putAll(spotifyCache.playlistData)
             playlistItemData.putAll(spotifyCache.playlistItemData)
+            playlistItemMap.putAll(spotifyCache.playlistItemMap)
             accessToken.set(spotifyCache.accessToken)
             refreshToken.set(spotifyCache.refreshToken)
             spotifyCache.accessTokenExpiresAt?.also { accessTokenExpiresAt.set(it) }
@@ -64,6 +66,7 @@ object SpotifyCache : IProviderCache<Playlist, PlaylistTrack> {
     private data class SpotifyCacheSurrogate(
         val playlistData: Map<String, @Serializable(with = SpotifyPlaylistSerializer.Serializer::class) Playlist>,
         val playlistItemData: Map<String, @Serializable(with = SpotifyPlaylistTrackSerializer.Serializer::class) PlaylistTrack>,
+        val playlistItemMap: Map<String, MutableList<String>>,
         val accessToken: String?,
         val refreshToken: String?,
         val accessTokenExpiresAt: Long?

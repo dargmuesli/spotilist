@@ -10,13 +10,14 @@ open module de.dargmuesli.spotilist {
     requires javafx.fxml;
     requires javafx.graphics;
     requires kotlin.stdlib;
-    requires kotlinx.coroutines.core.jvm;
+    requires kotlinx.coroutines.core;
     requires kotlinx.coroutines.javafx;
     requires kotlinx.serialization.core;
     requires kotlinx.serialization.json;
     requires mp3agic;
     requires org.apache.logging.log4j;
     requires org.kordamp.ikonli.javafx;
+    requires org.slf4j;
     requires se.michaelthelin.spotify;
 
     exports de.dargmuesli.spotilist.models;

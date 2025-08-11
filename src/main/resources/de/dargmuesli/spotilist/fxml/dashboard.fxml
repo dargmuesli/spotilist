@@ -9,8 +9,8 @@
       xmlns="http://javafx.com/javafx"
       fx:controller="de.dargmuesli.spotilist.ui.controllers.DashboardController">
     <MenuBar styleClass="bold">
-        <Menu mnemonicParsing="false" text="File">
-            <MenuItem mnemonicParsing="false" onAction="#menuFileSettingsAction" text="Settings"/>
+        <Menu mnemonicParsing="false" text="%file">
+            <MenuItem mnemonicParsing="false" onAction="#menuFileSettingsAction" text="%settings"/>
         </Menu>
     </MenuBar>
     <VBox VBox.vgrow="ALWAYS">
@@ -21,6 +21,6 @@
             <Accordion fx:id="playlistMappingsAccordion"/>
         </ScrollPane>
         <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#addPlaylistMapping"
-                text="New"/>
+                text="%new"/>
     </VBox>
 </VBox>

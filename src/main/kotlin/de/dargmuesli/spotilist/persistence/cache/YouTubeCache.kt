@@ -19,21 +19,9 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = YouTubeCache.Serializer::class)
 object YouTubeCache : IProviderCache<Playlist, PlaylistItem> {
-    override var playlistData: ObservableMap<String, Playlist> = observableHashMap<String?, Playlist?>().also {
-        it.addListener(
-            MapChangeListener {
-                Persistence.save(PersistenceTypes.CACHE)
-            }
-        )
-    }
-    override var playlistItemData: ObservableMap<String, PlaylistItem> =
-        observableHashMap<String?, PlaylistItem?>().also {
-            it.addListener(
-                MapChangeListener {
-                    Persistence.save(PersistenceTypes.CACHE)
-                }
-            )
-        }
+    override var playlistData: ObservableMap<String, Playlist> = observableHashMap()
+    override var playlistItemData: ObservableMap<String, PlaylistItem> = observableHashMap()
+    override var playlistItemMap: ObservableMap<String, MutableList<String>> = observableHashMap()
 
     object Serializer : KSerializer<YouTubeCache> {
         override val descriptor: SerialDescriptor = YouTubeCacheSurrogate.serializer().descriptor
@@ -42,7 +30,7 @@ object YouTubeCache : IProviderCache<Playlist, PlaylistItem> {
             encoder.encodeSerializableValue(
                 YouTubeCacheSurrogate.serializer(),
                 YouTubeCacheSurrogate(
-                    playlistData.toMap(), playlistItemData.toMap()
+                    playlistData.toMap(), playlistItemData.toMap(), playlistItemMap.toMap()
                 )
             )
         }
@@ -51,6 +39,7 @@ object YouTubeCache : IProviderCache<Playlist, PlaylistItem> {
             val youTubeCache = decoder.decodeSerializableValue(YouTubeCacheSurrogate.serializer())
             playlistData.putAll(youTubeCache.playlistData)
             playlistItemData.putAll(youTubeCache.playlistItemData)
+            playlistItemMap.putAll(youTubeCache.playlistItemMap)
             return YouTubeCache
         }
     }
@@ -59,6 +48,7 @@ object YouTubeCache : IProviderCache<Playlist, PlaylistItem> {
     @SerialName("YouTubeCache")
     private data class YouTubeCacheSurrogate(
         val playlistData: Map<String, @Serializable(with = YouTubePlaylistSerializer.Serializer::class) Playlist>,
-        val playlistItemData: Map<String, @Serializable(with = YouTubePlaylistItemSerializer.Serializer::class) PlaylistItem>
+        val playlistItemData: Map<String, @Serializable(with = YouTubePlaylistItemSerializer.Serializer::class) PlaylistItem>,
+        val playlistItemMap: Map<String, MutableList<String>>
     )
 }

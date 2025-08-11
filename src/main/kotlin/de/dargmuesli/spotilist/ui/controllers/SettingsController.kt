@@ -10,6 +10,7 @@ import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import java.net.MalformedURLException
+import java.net.URI
 import java.net.URISyntaxException
 import java.net.URL
 import java.util.*
@@ -126,7 +127,7 @@ class SettingsController : Initializable {
         }
 
         return try {
-            URL(spotifyRedirectUriTextField.text).toURI()
+            URI(spotifyRedirectUriTextField.text)
             true
         } catch (exception: URISyntaxException) {
             false

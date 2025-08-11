@@ -14,6 +14,7 @@ import java.nio.file.Path
 object FileSystemCache : IProviderCache<Path, Path> {
     override var playlistData: ObservableMap<String, Path> = observableHashMap()
     override var playlistItemData: ObservableMap<String, Path> = observableHashMap()
+    override var playlistItemMap: ObservableMap<String, MutableList<String>> = observableHashMap()
 
     object Serializer : KSerializer<FileSystemCache> {
         override val descriptor: SerialDescriptor = FileSystemCacheSurrogate.serializer().descriptor
@@ -21,7 +22,7 @@ object FileSystemCache : IProviderCache<Path, Path> {
         override fun serialize(encoder: Encoder, value: FileSystemCache) {
             encoder.encodeSerializableValue(
                 FileSystemCacheSurrogate.serializer(),
-                FileSystemCacheSurrogate(playlistData.toMap(), playlistItemData.toMap())
+                FileSystemCacheSurrogate(playlistData.toMap(), playlistItemData.toMap(), playlistItemMap.toMap())
             )
         }
 
@@ -29,6 +30,7 @@ object FileSystemCache : IProviderCache<Path, Path> {
             val fileSystemCache = decoder.decodeSerializableValue(FileSystemCacheSurrogate.serializer())
             playlistData.putAll(fileSystemCache.playlistData)
             playlistItemData.putAll(fileSystemCache.playlistItemData)
+            playlistItemMap.putAll(fileSystemCache.playlistItemMap)
             return FileSystemCache
         }
     }
@@ -37,6 +39,7 @@ object FileSystemCache : IProviderCache<Path, Path> {
     @SerialName("FileSystemCache")
     private data class FileSystemCacheSurrogate(
         val playlistData: Map<String, Path>,
-        val playlistItemData: Map<String, Path>
+        val playlistItemData: Map<String, Path>,
+        val playlistItemMap: Map<String, MutableList<String>>
     )
 }
