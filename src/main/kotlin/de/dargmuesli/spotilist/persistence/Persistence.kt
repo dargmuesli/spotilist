@@ -11,6 +11,7 @@ import kotlinx.serialization.modules.SerializersModule
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.sql.Connection
 import java.sql.DriverManager
 import java.util.*
 import kotlin.system.exitProcess
@@ -35,6 +36,8 @@ val format = Json {
 object Persistence {
     private const val SQLITE_CACHE_TABLE = "persistence_cache"
     private const val SQLITE_CACHE_PAYLOAD_KEY = "cache"
+    private const val SQLITE_CREATE_CACHE_TABLE_QUERY =
+        "CREATE TABLE IF NOT EXISTS $SQLITE_CACHE_TABLE (key TEXT PRIMARY KEY, payload TEXT NOT NULL)"
 
     var isInitialized = SimpleBooleanProperty(false)
 
@@ -133,9 +136,7 @@ object Persistence {
 
         try {
             DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}").use { connection ->
-                connection.createStatement().use {
-                    it.execute("CREATE TABLE IF NOT EXISTS $SQLITE_CACHE_TABLE (key TEXT PRIMARY KEY, payload TEXT NOT NULL)")
-                }
+                initializeCacheTable(connection)
 
                 connection.prepareStatement("SELECT payload FROM $SQLITE_CACHE_TABLE WHERE key = ?").use { statement ->
                     statement.setString(1, SQLITE_CACHE_PAYLOAD_KEY)
@@ -162,19 +163,27 @@ object Persistence {
             Files.createDirectories(cacheDatabasePath.parent)
         }
 
-        DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}").use { connection ->
-            connection.createStatement().use {
-                it.execute("CREATE TABLE IF NOT EXISTS $SQLITE_CACHE_TABLE (key TEXT PRIMARY KEY, payload TEXT NOT NULL)")
-            }
+        try {
+            DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}").use { connection ->
+                initializeCacheTable(connection)
 
-            connection.prepareStatement(
-                "INSERT INTO $SQLITE_CACHE_TABLE (key, payload) VALUES (?, ?) " +
-                    "ON CONFLICT(key) DO UPDATE SET payload = excluded.payload"
-            ).use { statement ->
-                statement.setString(1, SQLITE_CACHE_PAYLOAD_KEY)
-                statement.setString(2, format.encodeToString(PersistenceWrapper[PersistenceTypes.CACHE]))
-                statement.executeUpdate()
+                connection.prepareStatement(
+                    "INSERT INTO $SQLITE_CACHE_TABLE (key, payload) VALUES (?, ?) " +
+                        "ON CONFLICT(key) DO UPDATE SET payload = excluded.payload"
+                ).use { statement ->
+                    statement.setString(1, SQLITE_CACHE_PAYLOAD_KEY)
+                    statement.setString(2, format.encodeToString(PersistenceWrapper[PersistenceTypes.CACHE]))
+                    statement.executeUpdate()
+                }
             }
+        } catch (e: Exception) {
+            SpotilistNotification.error("Saving application data failed!", e)
+        }
+    }
+
+    private fun initializeCacheTable(connection: Connection) {
+        connection.createStatement().use {
+            it.execute(SQLITE_CREATE_CACHE_TABLE_QUERY)
         }
     }
 }
