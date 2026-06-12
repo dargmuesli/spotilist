@@ -1,0 +1,6 @@
+{
+  "[kotlin]": {
+    "editor.defaultFormatter": "JetBrains.kotlin-server"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
+}
