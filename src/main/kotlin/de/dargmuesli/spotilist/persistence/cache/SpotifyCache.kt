@@ -1,7 +1,6 @@
 package de.dargmuesli.spotilist.persistence.cache
 
 import de.dargmuesli.spotilist.persistence.Persistence
-import de.dargmuesli.spotilist.persistence.PersistenceTypes
 import de.dargmuesli.spotilist.util.serializer.SpotifyPlaylistSerializer
 import de.dargmuesli.spotilist.util.serializer.SpotifyPlaylistTrackSerializer
 import javafx.beans.property.SimpleLongProperty
@@ -52,20 +51,24 @@ object SpotifyCache : IProviderCache<Playlist, PlaylistTrack> {
     val accessToken = SimpleStringProperty().also {
         it.addListener { _, _, _ ->
             if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@addListener
-            Persistence.upsertSpotifyAuth(accessToken.value, refreshToken.value, accessTokenExpiresAt.value)
+            persistSpotifyAuth()
         }
     }
     val refreshToken = SimpleStringProperty().also {
         it.addListener { _, _, _ ->
             if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@addListener
-            Persistence.upsertSpotifyAuth(accessToken.value, refreshToken.value, accessTokenExpiresAt.value)
+            persistSpotifyAuth()
         }
     }
     val accessTokenExpiresAt = SimpleLongProperty().also {
         it.addListener { _, _, _ ->
             if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@addListener
-            Persistence.upsertSpotifyAuth(accessToken.value, refreshToken.value, accessTokenExpiresAt.value)
+            persistSpotifyAuth()
         }
+    }
+
+    private fun persistSpotifyAuth() {
+        Persistence.upsertSpotifyAuth(accessToken.value, refreshToken.value, accessTokenExpiresAt.value)
     }
 
     object Serializer : KSerializer<SpotifyCache> {

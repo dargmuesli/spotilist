@@ -3,7 +3,6 @@ package de.dargmuesli.spotilist.persistence.cache
 import com.google.api.services.youtube.model.Playlist
 import com.google.api.services.youtube.model.PlaylistItem
 import de.dargmuesli.spotilist.persistence.Persistence
-import de.dargmuesli.spotilist.persistence.PersistenceTypes
 import de.dargmuesli.spotilist.util.serializer.YouTubePlaylistItemSerializer
 import de.dargmuesli.spotilist.util.serializer.YouTubePlaylistSerializer
 import javafx.collections.FXCollections.observableHashMap
