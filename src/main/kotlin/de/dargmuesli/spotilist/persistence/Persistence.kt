@@ -34,6 +34,7 @@ val format = Json {
 }
 
 object Persistence {
+    private const val CACHE_DATABASE_FILENAME = "cache.sqlite"
     private const val SQLITE_CACHE_TABLE = "persistence_cache"
     private const val SQLITE_CACHE_PAYLOAD_KEY = "cache"
     private const val SQLITE_CREATE_CACHE_TABLE_QUERY =
@@ -57,7 +58,7 @@ object Persistence {
     private val localDirectory: Path =
         Paths.get(System.getProperty("user.home"), ".local", "share", MainApp.APPLICATION_TITLE)
     val tmpDirectory: Path = Paths.get(System.getProperty("java.io.tmpdir"), MainApp.APPLICATION_TITLE)
-    private val cacheDatabasePath: Path = cacheDirectory.resolve("${PersistenceTypes.CACHE.toString().lowercase()}.sqlite")
+    private val cacheDatabasePath: Path = cacheDirectory.resolve(CACHE_DATABASE_FILENAME)
     private val fileMap = hashMapOf(
         PersistenceTypes.CACHE to cacheDirectory,
         PersistenceTypes.CONFIG to configDirectory
@@ -94,7 +95,7 @@ object Persistence {
                                 )
                         } catch (e: Exception) {
                             SpotilistNotification.error("Loading application data failed!", e)
-                            exitProcess(0)
+                            exitProcess(1)
                         }
                     }
                 }
@@ -178,6 +179,7 @@ object Persistence {
             }
         } catch (e: Exception) {
             SpotilistNotification.error("Saving application data failed!", e)
+            exitProcess(1)
         }
     }
 
