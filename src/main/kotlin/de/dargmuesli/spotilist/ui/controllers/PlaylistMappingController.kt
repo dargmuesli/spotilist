@@ -13,11 +13,19 @@ import javafx.fxml.FXML
 import javafx.fxml.Initializable
 import javafx.scene.control.*
 import javafx.scene.layout.GridPane
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.URL
 import java.util.*
 import kotlin.properties.Delegates
 
-class PlaylistMappingController : Initializable {
+class PlaylistMappingController : Initializable, CoroutineScope {
+    private val job = SupervisorJob()
+    override val coroutineContext = Dispatchers.JavaFx + job
 
     @FXML
     private lateinit var playlistMappingTitledPane: TitledPane
@@ -144,39 +152,43 @@ class PlaylistMappingController : Initializable {
     private fun updateData() {
         dataLabel.text = "Updating data..."
 
-        val sourcePlaylist =
-            SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
-                playlistMapping.sourceResource.id.value
-            )
-        val targetPlaylist =
-            SpotilistProviderType.valueOf(playlistMapping.targetResource.provider.value).type.getPlaylist(
-                playlistMapping.targetResource.id.value
-            )
+        val sourceProvider = playlistMapping.sourceResource.provider.value
+        val sourceId = playlistMapping.sourceResource.id.value
+        val targetProvider = playlistMapping.targetResource.provider.value
+        val targetId = playlistMapping.targetResource.id.value
 
-        if (sourcePlaylist == null || targetPlaylist == null) return
+        launch(Dispatchers.IO) {
+            val sourcePlaylist = SpotilistProviderType.valueOf(sourceProvider).type.getPlaylist(sourceId)
+            val targetPlaylist = SpotilistProviderType.valueOf(targetProvider).type.getPlaylist(targetId)
 
-        dataLabel.text = "Source playlist name: " + sourcePlaylist.name +
-                "\nTarget playlist name: " + targetPlaylist.name +
-                "\nSource playlist track count: " + sourcePlaylist.tracks?.size +
-                "\nTarget playlist track count: " + targetPlaylist.tracks?.size
+            if (sourcePlaylist == null || targetPlaylist == null) return@launch
 
-        val sourceNames = sourcePlaylist.tracks?.map { track ->
-            track.artists?.let { artists ->
-                Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
-            } + Util.getValidFilename(track.name ?: "")
-        }?.toHashSet()
-        val targetNames = targetPlaylist.tracks?.map { track ->
-            track.artists?.let { artists ->
-                Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
-            } + Util.getValidFilename(track.name ?: "")
-        }?.toHashSet()
+            val sourceNames = sourcePlaylist.tracks?.map { track ->
+                track.artists?.let { artists ->
+                    Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
+                } + Util.getValidFilename(track.name ?: "")
+            }?.toHashSet()
+            val targetNames = targetPlaylist.tracks?.map { track ->
+                track.artists?.let { artists ->
+                    Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
+                } + Util.getValidFilename(track.name ?: "")
+            }?.toHashSet()
 
-        val notFound = if (sourceNames != null && targetNames != null) {
-            sourceNames.filter { !targetNames.contains(it) }
-        } else {
-            hashSetOf()
-        }.joinToString("\n")
+            val notFound = if (sourceNames != null && targetNames != null) {
+                sourceNames.filter { !targetNames.contains(it) }
+            } else {
+                hashSetOf()
+            }.joinToString("\n")
 
-        dataLabel.text += if (notFound.isEmpty()) "\nAll found in target!" else "\nNot found in target:\n${notFound}"
+            val text = "Source playlist name: " + sourcePlaylist.name +
+                    "\nTarget playlist name: " + targetPlaylist.name +
+                    "\nSource playlist track count: " + sourcePlaylist.tracks?.size +
+                    "\nTarget playlist track count: " + targetPlaylist.tracks?.size +
+                    (if (notFound.isEmpty()) "\nAll found in target!" else "\nNot found in target:\n${notFound}")
+
+            withContext(Dispatchers.JavaFx) {
+                dataLabel.text = text
+            }
+        }
     }
 }

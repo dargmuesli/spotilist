@@ -19,6 +19,12 @@ import javafx.fxml.Initializable
 import javafx.scene.control.Accordion
 import javafx.scene.control.Button
 import javafx.stage.Modality
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import se.michaelthelin.spotify.model_objects.AbstractModelObject
@@ -26,10 +32,13 @@ import java.io.File
 import java.net.URL
 import java.util.*
 
-class DashboardController : Initializable {
+class DashboardController : Initializable, CoroutineScope {
     companion object {
         val LOGGER: Logger = LogManager.getLogger()
     }
+
+    private val job = SupervisorJob()
+    override val coroutineContext = Dispatchers.JavaFx + job
 
     @FXML
     private lateinit var playlistMappingsAccordion: Accordion
@@ -75,188 +84,197 @@ class DashboardController : Initializable {
     }
 
     fun generateReport(actionEvent: ActionEvent) {
+        reportGenerateButton.isDisable = true
         LOGGER.info("Searching Spotify playlist tracks in local filesystem:")
 
-        SpotilistConfig.playlistMappings.forEach { playlistMapping ->
-            val sourcePlaylist =
-                SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
-                    playlistMapping.sourceResource.id.value
-                ) ?: return@forEach
+        val playlistMappings = SpotilistConfig.playlistMappings.toList()
 
-            if (!arrayOf("Liked Songs").contains(sourcePlaylist.name)) {
-                return@forEach
-            }
+        launch(Dispatchers.IO) {
+            playlistMappings.forEach { playlistMapping ->
+                val sourcePlaylist =
+                    SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
+                        playlistMapping.sourceResource.id.value
+                    ) ?: return@forEach
 
-            val targetPlaylist =
-                SpotilistProviderType.valueOf(playlistMapping.targetResource.provider.value).type.getPlaylist(
-                    playlistMapping.targetResource.id.value
-                ) ?: return@forEach
-
-            val sourceTracks = sourcePlaylist.tracks
-            val targetNames = targetPlaylist.tracks?.map { track ->
-                track.artists?.let { artists ->
-                    Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
-                } + Util.getValidFilename(track.name ?: "")
-            }?.toHashSet() ?: return@forEach
-
-            val notFound = sourceTracks?.filter {
-                !targetNames.contains(
-                    it.artists?.let { artists ->
-                        Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
-                    } + Util.getValidFilename(it.name ?: "")
-                )
-            }
-
-            if (notFound == null || notFound.isEmpty()) {
-                LOGGER.info("All found in \"${sourcePlaylist.name}\" (${sourcePlaylist.tracks?.size})!")
-            } else {
-                LOGGER.info(
-                    "In \"${sourcePlaylist.name}\" (${sourcePlaylist.tracks.size}), but not in \"${targetPlaylist.name}\" (${targetPlaylist.tracks.size}):\n${
-                        notFound.joinToString(
-                            "\n"
-                        ) { it.name + " (" + it.id + ")" }
-                    }"
-                )
-
-                if (arrayOf("Liked Songs").contains(sourcePlaylist.name)) {
-                    val currentUserProfile = spotifyApi.currentUsersProfile.build().execute()
-                    val playlist =
-                        spotifyApi.createPlaylist(currentUserProfile.id, "TODO (Date)").public_(false).build().execute()
-                    notFound.map { "spotify:track:" + it.id }.chunked(100).forEach { chunk ->
-                        spotifyApi.addItemsToPlaylist(playlist.id, JsonParser.parseString(Gson().toJson(chunk)).asJsonArray).build().execute()
-                    }
-                }
-            }
-        }
-
-        LOGGER.info("Searching Spotify playlist tracks in other playlists:")
-
-        SpotilistConfig.playlistMappings.forEachIndexed { index, playlistMapping ->
-            val sourcePlaylist =
-                SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
-                    playlistMapping.sourceResource.id.value
-                ) ?: return@forEachIndexed
-
-            if (arrayOf("Liked Songs").contains(sourcePlaylist.name)) {
-                return@forEachIndexed
-            }
-
-            LOGGER.info("Comparing \"${sourcePlaylist.name}\" (${sourcePlaylist.tracks?.size}):")
-
-            SpotilistConfig.playlistMappings.forEachIndexed { indexInner, playlistMappingInner ->
-                if (index <= indexInner || playlistMapping.sourceResource.id.value == playlistMappingInner.sourceResource.id.value) {
-                    return@forEachIndexed
+                if (!arrayOf("Liked Songs").contains(sourcePlaylist.name)) {
+                    return@forEach
                 }
 
                 val targetPlaylist =
-                    SpotilistProviderType.valueOf(playlistMappingInner.sourceResource.provider.value).type.getPlaylist(
-                        playlistMappingInner.sourceResource.id.value
-                    ) ?: return@forEachIndexed
+                    SpotilistProviderType.valueOf(playlistMapping.targetResource.provider.value).type.getPlaylist(
+                        playlistMapping.targetResource.id.value
+                    ) ?: return@forEach
 
-                if (arrayOf("Liked Songs").contains(targetPlaylist.name)) {
-                    return@forEachIndexed
-                }
-
-                val sourceNames = sourcePlaylist.tracks?.map { track ->
-                    track.artists?.let { artists ->
-                        Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
-                    } + Util.getValidFilename(track.name ?: "")
-                }?.toHashSet() ?: return@forEachIndexed
+                val sourceTracks = sourcePlaylist.tracks
                 val targetNames = targetPlaylist.tracks?.map { track ->
                     track.artists?.let { artists ->
                         Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
                     } + Util.getValidFilename(track.name ?: "")
-                }?.toHashSet() ?: return@forEachIndexed
+                }?.toHashSet() ?: return@forEach
 
-                val found = sourceNames.filter { targetNames.contains(it) }.joinToString("\n")
+                val notFound = sourceTracks?.filter {
+                    !targetNames.contains(
+                        it.artists?.let { artists ->
+                            Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
+                        } + Util.getValidFilename(it.name ?: "")
+                    )
+                }
 
-                if (found.isEmpty()) {
-                    LOGGER.debug("None found in \"${targetPlaylist.name}\" (${targetPlaylist.tracks.size})!")
+                if (notFound == null || notFound.isEmpty()) {
+                    LOGGER.info("All found in \"${sourcePlaylist.name}\" (${sourcePlaylist.tracks?.size})!")
                 } else {
-                    LOGGER.info("In \"${sourcePlaylist.name}\" (${sourcePlaylist.tracks.size}), but also in \"${targetPlaylist.name}\" (${targetPlaylist.tracks.size}):\n${found}")
+                    LOGGER.info(
+                        "In \"${sourcePlaylist.name}\" (${sourcePlaylist.tracks.size}), but not in \"${targetPlaylist.name}\" (${targetPlaylist.tracks.size}):\n${
+                            notFound.joinToString(
+                                "\n"
+                            ) { it.name + " (" + it.id + ")" }
+                        }"
+                    )
+
+                    if (arrayOf("Liked Songs").contains(sourcePlaylist.name)) {
+                        val currentUserProfile = spotifyApi.currentUsersProfile.build().execute()
+                        val playlist =
+                            spotifyApi.createPlaylist(currentUserProfile.id, "TODO (Date)").public_(false).build().execute()
+                        notFound.map { "spotify:track:" + it.id }.chunked(100).forEach { chunk ->
+                            spotifyApi.addItemsToPlaylist(playlist.id, JsonParser.parseString(Gson().toJson(chunk)).asJsonArray).build().execute()
+                        }
+                    }
                 }
             }
-        }
 
-        LOGGER.info("Searching liked tracks that are not in any genre playlist:")
+            LOGGER.info("Searching Spotify playlist tracks in other playlists:")
 
-        val likedSongsId = "4P9gkeY7Pd8EXn4IijePlE"
+            playlistMappings.forEachIndexed { index, playlistMapping ->
+                val sourcePlaylist =
+                    SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
+                        playlistMapping.sourceResource.id.value
+                    ) ?: return@forEachIndexed
 
-        val likedSongsPlaylist = SpotifyProvider.getPlaylist(
-            likedSongsId
-        ) ?: return
+                if (arrayOf("Liked Songs").contains(sourcePlaylist.name)) {
+                    return@forEachIndexed
+                }
 
-        val foundNames = mutableListOf<String>()
+                LOGGER.info("Comparing \"${sourcePlaylist.name}\" (${sourcePlaylist.tracks?.size}):")
 
-        for (playlistMapping in SpotilistConfig.playlistMappings) {
-            // TODO: allow to mark playlists as excluded from comparison
-            if (likedSongsId == playlistMapping.sourceResource.id.value) {
-                continue
+                playlistMappings.forEachIndexed { indexInner, playlistMappingInner ->
+                    if (index <= indexInner || playlistMapping.sourceResource.id.value == playlistMappingInner.sourceResource.id.value) {
+                        return@forEachIndexed
+                    }
+
+                    val targetPlaylist =
+                        SpotilistProviderType.valueOf(playlistMappingInner.sourceResource.provider.value).type.getPlaylist(
+                            playlistMappingInner.sourceResource.id.value
+                        ) ?: return@forEachIndexed
+
+                    if (arrayOf("Liked Songs").contains(targetPlaylist.name)) {
+                        return@forEachIndexed
+                    }
+
+                    val sourceNames = sourcePlaylist.tracks?.map { track ->
+                        track.artists?.let { artists ->
+                            Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
+                        } + Util.getValidFilename(track.name ?: "")
+                    }?.toHashSet() ?: return@forEachIndexed
+                    val targetNames = targetPlaylist.tracks?.map { track ->
+                        track.artists?.let { artists ->
+                            Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
+                        } + Util.getValidFilename(track.name ?: "")
+                    }?.toHashSet() ?: return@forEachIndexed
+
+                    val found = sourceNames.filter { targetNames.contains(it) }.joinToString("\n")
+
+                    if (found.isEmpty()) {
+                        LOGGER.debug("None found in \"${targetPlaylist.name}\" (${targetPlaylist.tracks.size})!")
+                    } else {
+                        LOGGER.info("In \"${sourcePlaylist.name}\" (${sourcePlaylist.tracks.size}), but also in \"${targetPlaylist.name}\" (${targetPlaylist.tracks.size}):\n${found}")
+                    }
+                }
             }
 
-            val targetPlaylist =
-                SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
-                    playlistMapping.sourceResource.id.value
-                ) ?: continue
+            LOGGER.info("Searching liked tracks that are not in any genre playlist:")
 
-            if (arrayOf("Liked Songs").contains(targetPlaylist.name)) {
-                continue
+            val likedSongsId = "4P9gkeY7Pd8EXn4IijePlE"
+
+            val likedSongsPlaylist = SpotifyProvider.getPlaylist(
+                likedSongsId
+            ) ?: return@launch
+
+            val foundNames = mutableListOf<String>()
+
+            for (playlistMapping in playlistMappings) {
+                // TODO: allow to mark playlists as excluded from comparison
+                if (likedSongsId == playlistMapping.sourceResource.id.value) {
+                    continue
+                }
+
+                val targetPlaylist =
+                    SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
+                        playlistMapping.sourceResource.id.value
+                    ) ?: continue
+
+                if (arrayOf("Liked Songs").contains(targetPlaylist.name)) {
+                    continue
+                }
+
+                val targetNames = targetPlaylist.tracks?.map { track ->
+                    track.artists?.let { artists ->
+                        Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
+                    } + Util.getValidFilename(track.name ?: "")
+                }?.toHashSet() ?: continue
+                foundNames.addAll(targetNames)
             }
 
-            val targetNames = targetPlaylist.tracks?.map { track ->
-                track.artists?.let { artists ->
+            val notFoundNames = mutableListOf<Track>()
+
+            likedSongsPlaylist.tracks?.forEach { track ->
+                val likedSongsName = track.artists?.let { artists ->
                     Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
                 } + Util.getValidFilename(track.name ?: "")
-            }?.toHashSet() ?: continue
-            foundNames.addAll(targetNames)
-        }
 
-        val notFoundNames = mutableListOf<Track>()
-
-        likedSongsPlaylist.tracks?.forEach { track ->
-            val likedSongsName = track.artists?.let { artists ->
-                Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
-            } + Util.getValidFilename(track.name ?: "")
-
-            if (!foundNames.contains(likedSongsName)) {
-                notFoundNames.add(track)
-            }
-        }
-
-        if (notFoundNames.isEmpty()) {
-            LOGGER.info("All \"Liked Songs\" are in a playlist.")
-        } else {
-            LOGGER.info("In \"Liked Songs\", but not in any playlist:\n${notFoundNames.joinToString("\n") { it.name + " (" + it.id + ")" }}")
-        }
-
-        LOGGER.info("Generating m3u files:")
-
-        for (playlistMapping in SpotilistConfig.playlistMappings) {
-            if (likedSongsId == playlistMapping.sourceResource.id.value) {
-                continue
+                if (!foundNames.contains(likedSongsName)) {
+                    notFoundNames.add(track)
+                }
             }
 
-            val targetPlaylist =
-                SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
-                    playlistMapping.sourceResource.id.value
-                ) ?: continue
-
-            if (arrayOf("Liked Songs").contains(targetPlaylist.name)) {
-                continue
+            if (notFoundNames.isEmpty()) {
+                LOGGER.info("All \"Liked Songs\" are in a playlist.")
+            } else {
+                LOGGER.info("In \"Liked Songs\", but not in any playlist:\n${notFoundNames.joinToString("\n") { it.name + " (" + it.id + ")" }}")
             }
 
-            val targetNames = targetPlaylist.tracks?.map { track ->
-                "M:\\Quellen\\Spotify\\" + track.artists?.let { artists ->
-                    Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
-                } + Util.getValidFilename(track.name ?: "") + ".mp3"
-            }?.reduce { acc, s -> acc + "\n" + s } ?: continue
-            targetPlaylist.name?.let {
-                File("/run/media/jonas/music/Playlists/Spotilist/" + Util.getValidFilename(it) + ".m3u").writeText(
-                    targetNames
-                )
+            LOGGER.info("Generating m3u files:")
+
+            for (playlistMapping in playlistMappings) {
+                if (likedSongsId == playlistMapping.sourceResource.id.value) {
+                    continue
+                }
+
+                val targetPlaylist =
+                    SpotilistProviderType.valueOf(playlistMapping.sourceResource.provider.value).type.getPlaylist(
+                        playlistMapping.sourceResource.id.value
+                    ) ?: continue
+
+                if (arrayOf("Liked Songs").contains(targetPlaylist.name)) {
+                    continue
+                }
+
+                val targetNames = targetPlaylist.tracks?.map { track ->
+                    "M:\\Quellen\\Spotify\\" + track.artists?.let { artists ->
+                        Util.getValidFilename(artists.map { it.name }.joinToString()) + " - "
+                    } + Util.getValidFilename(track.name ?: "") + ".mp3"
+                }?.reduce { acc, s -> acc + "\n" + s } ?: continue
+                targetPlaylist.name?.let {
+                    File("/run/media/jonas/music/Playlists/Spotilist/" + Util.getValidFilename(it) + ".m3u").writeText(
+                        targetNames
+                    )
+                }
+            }
+
+            LOGGER.info("Done!")
+
+            withContext(Dispatchers.JavaFx) {
+                reportGenerateButton.isDisable = false
             }
         }
-
-        LOGGER.info("Done!")
     }
 }
