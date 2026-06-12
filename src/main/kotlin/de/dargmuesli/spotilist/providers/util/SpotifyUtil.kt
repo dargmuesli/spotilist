@@ -10,6 +10,7 @@ import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.javafx.JavaFxDispatcher
 import kotlinx.coroutines.launch
 import se.michaelthelin.spotify.SpotifyApi
+import se.michaelthelin.spotify.enums.AuthorizationScope
 import se.michaelthelin.spotify.exceptions.detailed.BadRequestException
 import se.michaelthelin.spotify.requests.data.AbstractDataPagingRequest
 import java.awt.Desktop
@@ -65,6 +66,7 @@ object SpotifyUtil : CoroutineScope {
     fun authorize() {
         if (SpotifyConfig.authorizationCode.value.isNullOrEmpty()) {
             val authorizationCodeUri = spotifyApi.authorizationCodeUri()
+                .scope(AuthorizationScope.PLAYLIST_MODIFY_PRIVATE)
                 .build().execute()
 
             launch(Dispatchers.IO) {
