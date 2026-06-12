@@ -155,7 +155,7 @@ object Persistence {
             }
         } catch (e: Exception) {
             SpotilistNotification.error("Loading application data failed!", e)
-            exitProcess(0)
+            exitProcess(1)
         }
     }
 
