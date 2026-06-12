@@ -36,21 +36,13 @@ object SpotifyProvider :
         } else {
             getAllPagingItems(spotifyApi.getPlaylistsItems(playlistId))
                 .ifEmpty { null }
-                ?.also {
-                    if (SpotifyCache.playlistItemMap.containsKey(playlistId)) {
-                        SpotifyCache.playlistItemMap.clear()
-                    }
-                }
                 ?.onEach {
                     if (!SpotifyCache.playlistItemData.containsKey(it.track.id)) {
                         SpotifyCache.playlistItemData[it.track.id] = it
                     }
-
-                    if (!SpotifyCache.playlistItemMap.containsKey(playlistId)) {
-                        SpotifyCache.playlistItemMap[playlistId] = mutableListOf()
-                    }
-
-                    SpotifyCache.playlistItemMap[playlistId]!!.add(it.track.id)
+                }
+                ?.also { playlistItems ->
+                    SpotifyCache.playlistItemMap[playlistId] = playlistItems.map { it.track.id }.toMutableList()
                 }
         }
     }

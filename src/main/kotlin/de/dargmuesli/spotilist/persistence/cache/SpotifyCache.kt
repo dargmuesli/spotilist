@@ -7,6 +7,7 @@ import de.dargmuesli.spotilist.util.serializer.SpotifyPlaylistTrackSerializer
 import javafx.beans.property.SimpleLongProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections.observableHashMap
+import javafx.collections.MapChangeListener
 import javafx.collections.ObservableMap
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -20,18 +21,51 @@ import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack
 
 @Serializable(with = SpotifyCache.Serializer::class)
 object SpotifyCache : IProviderCache<Playlist, PlaylistTrack> {
-    override var playlistData: ObservableMap<String, Playlist> = observableHashMap()
-    override var playlistItemData: ObservableMap<String, PlaylistTrack> = observableHashMap()
-    override var playlistItemMap: ObservableMap<String, MutableList<String>> = observableHashMap()
+    override var playlistData: ObservableMap<String, Playlist> = observableHashMap<String, Playlist>().also { map ->
+        map.addListener(MapChangeListener { change ->
+            if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@MapChangeListener
+            if (change.wasRemoved()) Persistence.deleteSpotifyPlaylist(change.key)
+            if (change.wasAdded()) Persistence.upsertSpotifyPlaylist(change.key, change.valueAdded)
+        })
+    }
+    override var playlistItemData: ObservableMap<String, PlaylistTrack> =
+        observableHashMap<String, PlaylistTrack>().also { map ->
+            map.addListener(MapChangeListener { change ->
+                if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@MapChangeListener
+                if (change.wasRemoved()) Persistence.deleteSpotifyPlaylistItem(change.key)
+                if (change.wasAdded()) Persistence.upsertSpotifyPlaylistItem(change.key, change.valueAdded)
+            })
+        }
+    override var playlistItemMap: ObservableMap<String, MutableList<String>> =
+        observableHashMap<String, MutableList<String>>().also { map ->
+            map.addListener(MapChangeListener { change ->
+                if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@MapChangeListener
+                if (change.wasRemoved() && !change.wasAdded()) {
+                    Persistence.deleteSpotifyPlaylistItemMap(change.key)
+                }
+                if (change.wasAdded()) {
+                    Persistence.replaceSpotifyPlaylistItemMap(change.key, change.valueAdded)
+                }
+            })
+        }
 
     val accessToken = SimpleStringProperty().also {
-        it.addListener { _, _, _ -> Persistence.save(PersistenceTypes.CACHE) }
+        it.addListener { _, _, _ ->
+            if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@addListener
+            Persistence.upsertSpotifyAuth(accessToken.value, refreshToken.value, accessTokenExpiresAt.value)
+        }
     }
     val refreshToken = SimpleStringProperty().also {
-        it.addListener { _, _, _ -> Persistence.save(PersistenceTypes.CACHE) }
+        it.addListener { _, _, _ ->
+            if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@addListener
+            Persistence.upsertSpotifyAuth(accessToken.value, refreshToken.value, accessTokenExpiresAt.value)
+        }
     }
     val accessTokenExpiresAt = SimpleLongProperty().also {
-        it.addListener { _, _, _ -> Persistence.save(PersistenceTypes.CACHE) }
+        it.addListener { _, _, _ ->
+            if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@addListener
+            Persistence.upsertSpotifyAuth(accessToken.value, refreshToken.value, accessTokenExpiresAt.value)
+        }
     }
 
     object Serializer : KSerializer<SpotifyCache> {

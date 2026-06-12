@@ -19,9 +19,33 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = YouTubeCache.Serializer::class)
 object YouTubeCache : IProviderCache<Playlist, PlaylistItem> {
-    override var playlistData: ObservableMap<String, Playlist> = observableHashMap()
-    override var playlistItemData: ObservableMap<String, PlaylistItem> = observableHashMap()
-    override var playlistItemMap: ObservableMap<String, MutableList<String>> = observableHashMap()
+    override var playlistData: ObservableMap<String, Playlist> = observableHashMap<String, Playlist>().also { map ->
+        map.addListener(MapChangeListener { change ->
+            if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@MapChangeListener
+            if (change.wasRemoved()) Persistence.deleteYouTubePlaylist(change.key)
+            if (change.wasAdded()) Persistence.upsertYouTubePlaylist(change.key, change.valueAdded)
+        })
+    }
+    override var playlistItemData: ObservableMap<String, PlaylistItem> =
+        observableHashMap<String, PlaylistItem>().also { map ->
+            map.addListener(MapChangeListener { change ->
+                if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@MapChangeListener
+                if (change.wasRemoved()) Persistence.deleteYouTubePlaylistItem(change.key)
+                if (change.wasAdded()) Persistence.upsertYouTubePlaylistItem(change.key, change.valueAdded)
+            })
+        }
+    override var playlistItemMap: ObservableMap<String, MutableList<String>> =
+        observableHashMap<String, MutableList<String>>().also { map ->
+            map.addListener(MapChangeListener { change ->
+                if (!Persistence.isInitialized.value || Persistence.isCachePersistenceSuppressed()) return@MapChangeListener
+                if (change.wasRemoved() && !change.wasAdded()) {
+                    Persistence.deleteYouTubePlaylistItemMap(change.key)
+                }
+                if (change.wasAdded()) {
+                    Persistence.replaceYouTubePlaylistItemMap(change.key, change.valueAdded)
+                }
+            })
+        }
 
     object Serializer : KSerializer<YouTubeCache> {
         override val descriptor: SerialDescriptor = YouTubeCacheSurrogate.serializer().descriptor
