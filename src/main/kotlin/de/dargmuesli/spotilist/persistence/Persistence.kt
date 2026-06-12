@@ -46,7 +46,6 @@ object Persistence {
             "ON CONFLICT(key) DO UPDATE SET payload = excluded.payload"
 
     var isInitialized = SimpleBooleanProperty(false)
-    private var isCacheTableInitialized = false
 
     private val cacheDirectory: Path = Paths.get(System.getProperty("user.home"), ".cache", MainApp.APPLICATION_TITLE)
     private val configDirectory: Path
@@ -188,12 +187,9 @@ object Persistence {
     }
 
     private fun initializeCacheTable(connection: Connection) {
-        if (isCacheTableInitialized) return
-
         connection.createStatement().use { statement ->
             statement.execute(SQLITE_CREATE_CACHE_TABLE_QUERY)
         }
-        isCacheTableInitialized = true
     }
 
     private fun openCacheConnection(): Connection {
