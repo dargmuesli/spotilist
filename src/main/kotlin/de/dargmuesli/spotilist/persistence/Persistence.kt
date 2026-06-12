@@ -11,6 +11,7 @@ import kotlinx.serialization.modules.SerializersModule
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.sql.DriverManager
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -32,6 +33,9 @@ val format = Json {
 }
 
 object Persistence {
+    private const val SQLITE_CACHE_TABLE = "persistence_cache"
+    private const val SQLITE_CACHE_PAYLOAD_KEY = "cache"
+
     var isInitialized = SimpleBooleanProperty(false)
 
     private val cacheDirectory: Path = Paths.get(System.getProperty("user.home"), ".cache", MainApp.APPLICATION_TITLE)
@@ -50,6 +54,7 @@ object Persistence {
     private val localDirectory: Path =
         Paths.get(System.getProperty("user.home"), ".local", "share", MainApp.APPLICATION_TITLE)
     val tmpDirectory: Path = Paths.get(System.getProperty("java.io.tmpdir"), MainApp.APPLICATION_TITLE)
+    private val cacheDatabasePath: Path = cacheDirectory.resolve("${PersistenceTypes.CACHE.toString().lowercase()}.sqlite")
     private val fileMap = hashMapOf(
         PersistenceTypes.CACHE to cacheDirectory,
         PersistenceTypes.CONFIG to configDirectory
@@ -69,6 +74,11 @@ object Persistence {
             isInitialized.set(true)
         } else {
             for (type in types) {
+                if (type == PersistenceTypes.CACHE) {
+                    loadCacheFromSqlite()
+                    continue
+                }
+
                 fileMap[type]?.let { directory ->
                     val filePath = directory.resolve("${type.toString().lowercase()}.json")
 
@@ -96,6 +106,11 @@ object Persistence {
             save(*fileMap.keys.toTypedArray())
         } else {
             for (type in types) {
+                if (type == PersistenceTypes.CACHE) {
+                    saveCacheToSqlite()
+                    continue
+                }
+
                 fileMap[type]?.let { directory ->
                     val filePath = directory.resolve("${type.toString().lowercase()}.json")
 
@@ -108,6 +123,57 @@ object Persistence {
                         format.encodeToString(PersistenceWrapper[type])
                     )
                 }
+            }
+        }
+
+    }
+
+    private fun loadCacheFromSqlite() {
+        if (!Files.exists(cacheDatabasePath)) return
+
+        try {
+            DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}").use { connection ->
+                connection.createStatement().use {
+                    it.execute("CREATE TABLE IF NOT EXISTS $SQLITE_CACHE_TABLE (key TEXT PRIMARY KEY, payload TEXT NOT NULL)")
+                }
+
+                connection.prepareStatement("SELECT payload FROM $SQLITE_CACHE_TABLE WHERE key = ?").use { statement ->
+                    statement.setString(1, SQLITE_CACHE_PAYLOAD_KEY)
+
+                    statement.executeQuery().use { resultSet ->
+                        if (!resultSet.next()) return
+
+                        PersistenceWrapper[PersistenceTypes.CACHE] =
+                            format.decodeFromString(
+                                AbstractSerializable.serializer(),
+                                resultSet.getString("payload")
+                            )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            SpotilistNotification.error("Loading application data failed!", e)
+            exitProcess(0)
+        }
+    }
+
+    private fun saveCacheToSqlite() {
+        if (!Files.exists(cacheDatabasePath.parent)) {
+            Files.createDirectories(cacheDatabasePath.parent)
+        }
+
+        DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}").use { connection ->
+            connection.createStatement().use {
+                it.execute("CREATE TABLE IF NOT EXISTS $SQLITE_CACHE_TABLE (key TEXT PRIMARY KEY, payload TEXT NOT NULL)")
+            }
+
+            connection.prepareStatement(
+                "INSERT INTO $SQLITE_CACHE_TABLE (key, payload) VALUES (?, ?) " +
+                    "ON CONFLICT(key) DO UPDATE SET payload = excluded.payload"
+            ).use { statement ->
+                statement.setString(1, SQLITE_CACHE_PAYLOAD_KEY)
+                statement.setString(2, format.encodeToString(PersistenceWrapper[PersistenceTypes.CACHE]))
+                statement.executeUpdate()
             }
         }
     }
