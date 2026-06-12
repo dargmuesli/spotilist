@@ -136,13 +136,14 @@ object Persistence {
         if (!Files.exists(cacheDatabasePath)) return
 
         try {
-            DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}").use { connection ->
+            openCacheConnection().use { connection ->
                 initializeCacheTable(connection)
 
                 connection.prepareStatement("SELECT payload FROM $SQLITE_CACHE_TABLE WHERE key = ?").use { statement ->
                     statement.setString(1, SQLITE_CACHE_PAYLOAD_KEY)
 
                     statement.executeQuery().use { resultSet ->
+                        // Missing cache row is expected when the application starts with an empty cache database.
                         if (!resultSet.next()) return
 
                         PersistenceWrapper[PersistenceTypes.CACHE] =
@@ -165,7 +166,7 @@ object Persistence {
         }
 
         try {
-            DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}").use { connection ->
+            openCacheConnection().use { connection ->
                 initializeCacheTable(connection)
 
                 connection.prepareStatement(
@@ -187,5 +188,9 @@ object Persistence {
         connection.createStatement().use {
             it.execute(SQLITE_CREATE_CACHE_TABLE_QUERY)
         }
+    }
+
+    private fun openCacheConnection(): Connection {
+        return DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}")
     }
 }
