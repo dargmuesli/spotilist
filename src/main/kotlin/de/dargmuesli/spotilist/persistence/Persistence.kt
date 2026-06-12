@@ -34,6 +34,7 @@ val format = Json {
 }
 
 object Persistence {
+    private const val EXIT_CODE_FAILURE = 1
     private const val CACHE_DATABASE_FILENAME = "cache.sqlite"
     private const val SQLITE_CACHE_TABLE = "persistence_cache"
     private const val SQLITE_CACHE_PAYLOAD_KEY = "cache"
@@ -72,6 +73,7 @@ object Persistence {
 
     init {
         versionProperties.load(this.javaClass.getResourceAsStream("/version.properties"))
+        Class.forName("org.sqlite.JDBC")
     }
 
     fun getVersion(): String = versionProperties.getProperty("version")
@@ -99,7 +101,7 @@ object Persistence {
                                 )
                         } catch (e: Exception) {
                             SpotilistNotification.error("Loading application data failed!", e)
-                            exitProcess(1)
+                            exitProcess(EXIT_CODE_FAILURE)
                         }
                     }
                 }
@@ -160,7 +162,7 @@ object Persistence {
             }
         } catch (e: Exception) {
             SpotilistNotification.error("Loading application data failed!", e)
-            exitProcess(1)
+            exitProcess(EXIT_CODE_FAILURE)
         }
     }
 
@@ -181,18 +183,17 @@ object Persistence {
             }
         } catch (e: Exception) {
             SpotilistNotification.error("Saving application data failed!", e)
-            exitProcess(1)
+            exitProcess(EXIT_CODE_FAILURE)
         }
     }
 
     private fun initializeCacheTable(connection: Connection) {
-        connection.createStatement().use {
-            it.execute(SQLITE_CREATE_CACHE_TABLE_QUERY)
+        connection.createStatement().use { statement ->
+            statement.execute(SQLITE_CREATE_CACHE_TABLE_QUERY)
         }
     }
 
     private fun openCacheConnection(): Connection {
-        Class.forName("org.sqlite.JDBC")
         return DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}")
     }
 }
