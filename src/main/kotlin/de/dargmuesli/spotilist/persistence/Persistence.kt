@@ -39,6 +39,10 @@ object Persistence {
     private const val SQLITE_CACHE_PAYLOAD_KEY = "cache"
     private const val SQLITE_CREATE_CACHE_TABLE_QUERY =
         "CREATE TABLE IF NOT EXISTS $SQLITE_CACHE_TABLE (key TEXT PRIMARY KEY, payload TEXT NOT NULL)"
+    private const val SQLITE_SELECT_CACHE_PAYLOAD_QUERY = "SELECT payload FROM $SQLITE_CACHE_TABLE WHERE key = ?"
+    private const val SQLITE_UPSERT_CACHE_PAYLOAD_QUERY =
+        "INSERT INTO $SQLITE_CACHE_TABLE (key, payload) VALUES (?, ?) " +
+            "ON CONFLICT(key) DO UPDATE SET payload = excluded.payload"
 
     var isInitialized = SimpleBooleanProperty(false)
 
@@ -139,7 +143,7 @@ object Persistence {
             openCacheConnection().use { connection ->
                 initializeCacheTable(connection)
 
-                connection.prepareStatement("SELECT payload FROM $SQLITE_CACHE_TABLE WHERE key = ?").use { statement ->
+                connection.prepareStatement(SQLITE_SELECT_CACHE_PAYLOAD_QUERY).use { statement ->
                     statement.setString(1, SQLITE_CACHE_PAYLOAD_KEY)
 
                     statement.executeQuery().use { resultSet ->
@@ -169,10 +173,7 @@ object Persistence {
             openCacheConnection().use { connection ->
                 initializeCacheTable(connection)
 
-                connection.prepareStatement(
-                    "INSERT INTO $SQLITE_CACHE_TABLE (key, payload) VALUES (?, ?) " +
-                        "ON CONFLICT(key) DO UPDATE SET payload = excluded.payload"
-                ).use { statement ->
+                connection.prepareStatement(SQLITE_UPSERT_CACHE_PAYLOAD_QUERY).use { statement ->
                     statement.setString(1, SQLITE_CACHE_PAYLOAD_KEY)
                     statement.setString(2, format.encodeToString(PersistenceWrapper[PersistenceTypes.CACHE]))
                     statement.executeUpdate()
@@ -191,6 +192,7 @@ object Persistence {
     }
 
     private fun openCacheConnection(): Connection {
+        Class.forName("org.sqlite.JDBC")
         return DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}")
     }
 }
