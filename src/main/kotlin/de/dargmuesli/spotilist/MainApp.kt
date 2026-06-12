@@ -20,6 +20,7 @@ class MainApp : Application() {
         Companion.stage = stage
 
         stage.setOnCloseRequest {
+            dashboardController.dispose()
             Persistence.save(PersistenceTypes.CACHE)
         }
 

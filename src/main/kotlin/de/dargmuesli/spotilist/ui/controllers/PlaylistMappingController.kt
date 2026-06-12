@@ -16,6 +16,8 @@ import javafx.scene.layout.GridPane
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -76,6 +78,7 @@ class PlaylistMappingController : Initializable, CoroutineScope {
             if (newEnabled) {
                 updateData()
             } else {
+                job.cancelChildren()
                 dataLabel.text = ""
             }
         }
@@ -190,5 +193,9 @@ class PlaylistMappingController : Initializable, CoroutineScope {
                 dataLabel.text = text
             }
         }
+    }
+
+    fun dispose() {
+        job.cancel()
     }
 }
