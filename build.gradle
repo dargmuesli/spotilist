@@ -27,8 +27,8 @@ ext {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
     modularity.inferModulePath = false // https://github.com/openjfx/javafx-gradle-plugin/pull/154/files
 }
@@ -40,7 +40,7 @@ application {
 
 kotlin {
     compilerOptions {
-        jvmTarget = JvmTarget.JVM_21
+        jvmTarget = JvmTarget.JVM_17
     }
 }
 
