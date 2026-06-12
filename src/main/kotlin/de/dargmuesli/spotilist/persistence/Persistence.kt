@@ -73,7 +73,6 @@ object Persistence {
 
     init {
         versionProperties.load(this.javaClass.getResourceAsStream("/version.properties"))
-        Class.forName("org.sqlite.JDBC")
     }
 
     fun getVersion(): String = versionProperties.getProperty("version")
@@ -194,6 +193,10 @@ object Persistence {
     }
 
     private fun openCacheConnection(): Connection {
-        return DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}")
+        val connection = DriverManager.getConnection("jdbc:sqlite:${cacheDatabasePath.toAbsolutePath()}")
+        connection.createStatement().use { statement ->
+            statement.execute("PRAGMA foreign_keys = ON")
+        }
+        return connection
     }
 }
