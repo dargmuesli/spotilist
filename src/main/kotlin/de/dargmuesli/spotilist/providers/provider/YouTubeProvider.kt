@@ -7,7 +7,6 @@ import de.dargmuesli.spotilist.MainApp
 import de.dargmuesli.spotilist.models.music.Artist
 import de.dargmuesli.spotilist.models.music.Playlist
 import de.dargmuesli.spotilist.models.music.Track
-import de.dargmuesli.spotilist.persistence.cache.SpotifyCache
 import de.dargmuesli.spotilist.persistence.cache.YouTubeCache
 import de.dargmuesli.spotilist.persistence.config.YouTubeConfig
 import de.dargmuesli.spotilist.providers.ISpotilistProviderAuthorizable
@@ -32,7 +31,7 @@ object YouTubeProvider :
     private val LOGGER = LogManager.getLogger()
 
     override fun getProviderPlaylist(playlistId: String): com.google.api.services.youtube.model.Playlist? {
-        return if (SpotifyCache.playlistData.containsKey(playlistId)) {
+        return if (YouTubeCache.playlistData.containsKey(playlistId)) {
             YouTubeCache.playlistData[playlistId]
         } else {
             val playlistListResponse = YOUTUBE.playlists()
@@ -54,7 +53,12 @@ object YouTubeProvider :
     }
 
     override fun getProviderPlaylistItems(playlistId: String): List<com.google.api.services.youtube.model.PlaylistItem>? {
-        // TODO: Is there a meaningful way to use the cache here?
+        if (YouTubeCache.playlistItemMap.containsKey(playlistId)) {
+            return YouTubeCache.playlistItemMap[playlistId]?.mapNotNull { itemId ->
+                YouTubeCache.playlistItemData[itemId]
+            }?.ifEmpty { null }
+        }
+
         val playlistItemsListRequest = YOUTUBE.playlistItems()
             .list(mutableListOf("snippet,contentDetails"))
             .setFields("etag,items(etag,snippet(title),contentDetails(videoId,videoPublishedAt)),nextPageToken")
@@ -62,6 +66,7 @@ object YouTubeProvider :
             .setMaxResults(50L)
             .setPlaylistId(playlistId)
         val playlistItems = mutableListOf<com.google.api.services.youtube.model.PlaylistItem>()
+        val playlistItemIds = mutableListOf<String>()
         var nextPageToken: String? = null
 
         do {
@@ -72,6 +77,7 @@ object YouTubeProvider :
 
             for (playlistItem in playlistItemListResponse.items) {
                 playlistItems.add(playlistItem)
+                playlistItemIds.add(playlistItem.contentDetails.videoId)
 
                 if (!YouTubeCache.playlistItemData.containsKey(playlistItem.contentDetails.videoId)) {
                     YouTubeCache.playlistItemData[playlistItem.contentDetails.videoId] = playlistItem
@@ -80,6 +86,10 @@ object YouTubeProvider :
 
             nextPageToken = playlistItemListResponse.nextPageToken
         } while (!nextPageToken.isNullOrEmpty())
+
+        if (playlistItems.isNotEmpty()) {
+            YouTubeCache.playlistItemMap[playlistId] = playlistItemIds
+        }
 
         return playlistItems.ifEmpty { null }
     }
