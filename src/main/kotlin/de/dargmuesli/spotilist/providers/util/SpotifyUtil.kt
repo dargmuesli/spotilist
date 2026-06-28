@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.javafx.JavaFxDispatcher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import se.michaelthelin.spotify.SpotifyApi
 import se.michaelthelin.spotify.enums.AuthorizationScope
 import se.michaelthelin.spotify.exceptions.detailed.BadRequestException
@@ -73,14 +74,20 @@ object SpotifyUtil : CoroutineScope {
                 Desktop.getDesktop().browse(authorizationCodeUri)
             }
         } else {
-            try {
-                val authorizationCode =
-                    spotifyApi.authorizationCode(SpotifyConfig.authorizationCode.value).build().execute()
-                SpotifyCache.accessToken.set(authorizationCode.accessToken)
-                SpotifyCache.refreshToken.set(authorizationCode.refreshToken)
-                SpotifyCache.accessTokenExpiresAt.set(Date().time / 1000 + authorizationCode.expiresIn)
-            } catch (e: BadRequestException) {
-                e.message?.let { SpotilistNotification.error(it) }
+            val authorizationCode = SpotifyConfig.authorizationCode.value
+            val api = spotifyApi
+            launch(Dispatchers.IO) {
+                try {
+                    val spotifyAuthorizationCode = api.authorizationCode(authorizationCode).build().execute()
+                    withContext(Dispatchers.JavaFx) {
+                        SpotifyCache.accessToken.set(spotifyAuthorizationCode.accessToken)
+                        SpotifyCache.refreshToken.set(spotifyAuthorizationCode.refreshToken)
+                        SpotifyCache.accessTokenExpiresAt.set(Date().time / 1000 + spotifyAuthorizationCode.expiresIn)
+                        SpotifyConfig.authorizationCode.set("")
+                    }
+                } catch (e: BadRequestException) {
+                    e.message?.let { SpotilistNotification.error(it) }
+                }
             }
         }
     }
