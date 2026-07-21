@@ -23,6 +23,7 @@ ext {
     kotlinSerializationVersion = '1.11.0'
     log4jVersion = '2.26.1'
     mp3agicVersion = '0.9.1'
+    sqliteJdbcVersion = '3.50.3.0'
     spotifyWebApiJavaVersion = '9.4.0'
 }
 
@@ -59,6 +60,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerializationVersion"
     implementation "org.kordamp.ikonli:ikonli-fontawesome5-pack:$ikonliVersion"
     implementation "org.kordamp.ikonli:ikonli-javafx:$ikonliVersion"
+    implementation "org.xerial:sqlite-jdbc:$sqliteJdbcVersion"
     implementation "se.michaelthelin.spotify:spotify-web-api-java:$spotifyWebApiJavaVersion"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
