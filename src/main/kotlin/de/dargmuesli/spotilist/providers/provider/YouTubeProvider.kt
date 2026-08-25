@@ -7,7 +7,6 @@ import de.dargmuesli.spotilist.MainApp
 import de.dargmuesli.spotilist.models.music.Artist
 import de.dargmuesli.spotilist.models.music.Playlist
 import de.dargmuesli.spotilist.models.music.Track
-import de.dargmuesli.spotilist.persistence.cache.SpotifyCache
 import de.dargmuesli.spotilist.persistence.cache.YouTubeCache
 import de.dargmuesli.spotilist.persistence.config.YouTubeConfig
 import de.dargmuesli.spotilist.providers.ISpotilistProviderAuthorizable
@@ -32,7 +31,7 @@ object YouTubeProvider :
     private val LOGGER = LogManager.getLogger()
 
     override fun getProviderPlaylist(playlistId: String): com.google.api.services.youtube.model.Playlist? {
-        return if (SpotifyCache.playlistData.containsKey(playlistId)) {
+        return if (YouTubeCache.playlistData.containsKey(playlistId)) {
             YouTubeCache.playlistData[playlistId]
         } else {
             val playlistListResponse = YOUTUBE.playlists()
