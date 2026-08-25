@@ -7,7 +7,6 @@ import de.dargmuesli.spotilist.models.music.Playlist
 import de.dargmuesli.spotilist.models.music.Track
 import de.dargmuesli.spotilist.persistence.SpotilistConfig
 import de.dargmuesli.spotilist.providers.SpotilistProviderType
-import de.dargmuesli.spotilist.providers.provider.SpotifyProvider
 import de.dargmuesli.spotilist.providers.util.SpotifyUtil.spotifyApi
 import de.dargmuesli.spotilist.util.Util
 import org.apache.logging.log4j.LogManager
@@ -113,7 +112,7 @@ object PlaylistReportService {
     private fun reportLikedSongsNotInAnyPlaylist() {
         LOGGER.info("Searching liked tracks that are not in any genre playlist:")
 
-        val likedSongsPlaylist = SpotifyProvider.getPlaylist(LIKED_SONGS_PLAYLIST_ID) ?: return
+        val likedSongsPlaylist = SpotilistProviderType.SPOTIFY.type.getPlaylist(LIKED_SONGS_PLAYLIST_ID) ?: return
 
         val foundKeys = mutableListOf<String>()
 

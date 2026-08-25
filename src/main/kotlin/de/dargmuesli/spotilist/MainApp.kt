@@ -1,5 +1,6 @@
 package de.dargmuesli.spotilist
 
+import de.dargmuesli.spotilist.di.providerModule
 import de.dargmuesli.spotilist.persistence.Persistence
 import de.dargmuesli.spotilist.persistence.PersistenceTypes
 import de.dargmuesli.spotilist.ui.SpotilistStage
@@ -11,11 +12,16 @@ import javafx.scene.Scene
 import javafx.stage.Stage
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import org.koin.core.context.startKoin
 import java.io.IOException
 import java.util.*
 
 class MainApp : Application() {
     override fun start(stage: Stage) {
+        startKoin {
+            modules(providerModule)
+        }
+
         SpotilistStage.makeSpotilistStage(stage)
         Companion.stage = stage
 

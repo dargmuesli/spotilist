@@ -17,7 +17,7 @@ import kotlinx.coroutines.javafx.JavaFxDispatcher
 import org.apache.logging.log4j.LogManager
 
 
-object YouTubeProvider :
+class YouTubeProvider :
     ISpotilistProviderAuthorizable<com.google.api.services.youtube.model.Playlist, com.google.api.services.youtube.model.PlaylistItem>,
     CoroutineScope {
     override val coroutineContext: JavaFxDispatcher
