@@ -1,7 +1,6 @@
 package de.dargmuesli.spotilist.persistence.cache
 
 import javafx.collections.FXCollections.observableHashMap
-import javafx.collections.ObservableMap
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -12,9 +11,9 @@ import java.nio.file.Path
 
 @Serializable(with = FileSystemCache.Serializer::class)
 object FileSystemCache : IProviderCache<Path, Path> {
-    override var playlistData: ObservableMap<String, Path> = observableHashMap()
-    override var playlistItemData: ObservableMap<String, Path> = observableHashMap()
-    override var playlistItemMap: ObservableMap<String, MutableList<String>> = observableHashMap()
+    override var playlistData: MutableMap<String, Path> = observableHashMap()
+    override var playlistItemData: MutableMap<String, Path> = observableHashMap()
+    override var playlistItemMap: MutableMap<String, MutableList<String>> = observableHashMap()
 
     object Serializer : KSerializer<FileSystemCache> {
         override val descriptor: SerialDescriptor = FileSystemCacheSurrogate.serializer().descriptor

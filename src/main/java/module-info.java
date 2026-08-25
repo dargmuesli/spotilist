@@ -6,6 +6,7 @@ open module de.dargmuesli.spotilist {
     requires google.api.client;
     requires java.desktop;
     requires java.logging;
+    requires java.sql;
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.graphics;
@@ -18,6 +19,7 @@ open module de.dargmuesli.spotilist {
     requires org.apache.logging.log4j;
     requires org.kordamp.ikonli.javafx;
     requires org.slf4j;
+    requires org.xerial.sqlitejdbc;
     requires se.michaelthelin.spotify;
 
     exports de.dargmuesli.spotilist.models;

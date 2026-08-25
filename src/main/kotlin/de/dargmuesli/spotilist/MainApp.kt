@@ -2,7 +2,7 @@ package de.dargmuesli.spotilist
 
 import de.dargmuesli.spotilist.di.providerModule
 import de.dargmuesli.spotilist.persistence.Persistence
-import de.dargmuesli.spotilist.persistence.PersistenceTypes
+import de.dargmuesli.spotilist.persistence.SpotilistCache
 import de.dargmuesli.spotilist.ui.SpotilistStage
 import de.dargmuesli.spotilist.ui.controllers.DashboardController
 import javafx.application.Application
@@ -26,7 +26,7 @@ class MainApp : Application() {
         Companion.stage = stage
 
         stage.setOnCloseRequest {
-            Persistence.save(PersistenceTypes.CACHE)
+            SpotilistCache.close()
         }
 
         try {

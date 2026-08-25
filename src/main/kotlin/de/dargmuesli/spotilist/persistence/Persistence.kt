@@ -19,7 +19,6 @@ val module = SerializersModule {
     polymorphicDefaultSerializer(AbstractSerializable::class) { instance ->
         @Suppress("UNCHECKED_CAST")
         when (instance) {
-            is SpotilistCache -> SpotilistCache.Serializer as SerializationStrategy<AbstractSerializable>
             is SpotilistConfig -> SpotilistConfig.Serializer as SerializationStrategy<AbstractSerializable>
         }
     }
@@ -34,7 +33,7 @@ val format = Json {
 object Persistence {
     var isInitialized = SimpleBooleanProperty(false)
 
-    private val cacheDirectory: Path = Paths.get(System.getProperty("user.home"), ".cache", MainApp.APPLICATION_TITLE)
+    val cacheDirectory: Path = Paths.get(System.getProperty("user.home"), ".cache", MainApp.APPLICATION_TITLE)
     private val configDirectory: Path
         get() {
             val os = System.getProperty("os.name").lowercase()
@@ -51,7 +50,6 @@ object Persistence {
         Paths.get(System.getProperty("user.home"), ".local", "share", MainApp.APPLICATION_TITLE)
     val tmpDirectory: Path = Paths.get(System.getProperty("java.io.tmpdir"), MainApp.APPLICATION_TITLE)
     private val fileMap = hashMapOf(
-        PersistenceTypes.CACHE to cacheDirectory,
         PersistenceTypes.CONFIG to configDirectory
     )
 
@@ -65,6 +63,7 @@ object Persistence {
 
     fun load(vararg types: PersistenceTypes) {
         if (types.isEmpty()) {
+            SpotilistCache.open()
             load(*fileMap.keys.toTypedArray())
             isInitialized.set(true)
         } else {

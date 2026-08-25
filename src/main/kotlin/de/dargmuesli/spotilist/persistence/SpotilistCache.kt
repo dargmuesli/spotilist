@@ -2,41 +2,25 @@ package de.dargmuesli.spotilist.persistence
 
 import de.dargmuesli.spotilist.persistence.cache.SpotifyCache
 import de.dargmuesli.spotilist.persistence.cache.YouTubeCache
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import java.nio.file.Files
+import java.sql.Connection
+import java.sql.DriverManager
 
-
-@Serializable(with = SpotilistCache.Serializer::class)
-object SpotilistCache : AbstractSerializable() {
-    var spotify = SpotifyCache
-    var youTube = YouTubeCache
-
-    object Serializer : KSerializer<SpotilistCache> {
-        override val descriptor: SerialDescriptor = SpotilistCacheSurrogate.serializer().descriptor
-
-        override fun serialize(encoder: Encoder, value: SpotilistCache) {
-            encoder.encodeSerializableValue(
-                SpotilistCacheSurrogate.serializer(),
-                SpotilistCacheSurrogate(spotify, youTube)
-            )
-        }
-
-        override fun deserialize(decoder: Decoder): SpotilistCache {
-            val spotilistCache = decoder.decodeSerializableValue(SpotilistCacheSurrogate.serializer())
-            spotify = spotilistCache.spotify
-            youTube = spotilistCache.youTube
-            return SpotilistCache
-        }
+/**
+ * Owns the single SQLite connection backing [SpotifyCache] and [YouTubeCache], replacing the former JSON-blob cache that had to be fully read into memory and fully rewritten on every save.
+ */
+object SpotilistCache {
+    private val connection: Connection by lazy {
+        Files.createDirectories(Persistence.cacheDirectory)
+        DriverManager.getConnection("jdbc:sqlite:${Persistence.cacheDirectory.resolve("cache.db")}")
     }
 
-    @Serializable
-    @SerialName("SpotilistCache")
-    private data class SpotilistCacheSurrogate(
-        val spotify: SpotifyCache,
-        val youTube: YouTubeCache
-    )
+    fun open() {
+        SpotifyCache.open(connection)
+        YouTubeCache.open(connection)
+    }
+
+    fun close() {
+        connection.close()
+    }
 }
