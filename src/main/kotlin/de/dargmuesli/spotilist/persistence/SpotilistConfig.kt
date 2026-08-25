@@ -1,6 +1,7 @@
 package de.dargmuesli.spotilist.persistence
 
 import de.dargmuesli.spotilist.models.PlaylistMapping
+import de.dargmuesli.spotilist.persistence.config.ExportConfig
 import de.dargmuesli.spotilist.persistence.config.SpotifyConfig
 import de.dargmuesli.spotilist.persistence.config.YouTubeConfig
 import javafx.collections.FXCollections
@@ -16,6 +17,7 @@ import kotlinx.serialization.encoding.Encoder
 object SpotilistConfig : AbstractSerializable() {
     var spotify: SpotifyConfig = SpotifyConfig
     var youTube: YouTubeConfig = YouTubeConfig
+    var export: ExportConfig = ExportConfig
 
     var playlistMappings: ObservableList<PlaylistMapping> = FXCollections.observableArrayList()
 
@@ -28,6 +30,7 @@ object SpotilistConfig : AbstractSerializable() {
                 SpotilistConfigSurrogate(
                     spotify,
                     youTube,
+                    export,
                     playlistMappings
                 )
             )
@@ -37,6 +40,7 @@ object SpotilistConfig : AbstractSerializable() {
             val spotilistConfig = decoder.decodeSerializableValue(SpotilistConfigSurrogate.serializer())
             spotify = spotilistConfig.spotify
             youTube = spotilistConfig.youTube
+            export = spotilistConfig.export
             playlistMappings.addAll(spotilistConfig.playlistMappings)
             return SpotilistConfig
         }
@@ -47,6 +51,7 @@ object SpotilistConfig : AbstractSerializable() {
     private data class SpotilistConfigSurrogate(
         val spotify: SpotifyConfig,
         val youTube: YouTubeConfig,
+        val export: ExportConfig = ExportConfig,
         val playlistMappings: List<PlaylistMapping>
     )
 }
