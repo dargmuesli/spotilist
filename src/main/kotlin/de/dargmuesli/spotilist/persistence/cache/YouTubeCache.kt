@@ -2,53 +2,33 @@ package de.dargmuesli.spotilist.persistence.cache
 
 import com.google.api.services.youtube.model.Playlist
 import com.google.api.services.youtube.model.PlaylistItem
-import de.dargmuesli.spotilist.persistence.Persistence
-import de.dargmuesli.spotilist.persistence.PersistenceTypes
+import de.dargmuesli.spotilist.persistence.format
 import de.dargmuesli.spotilist.util.serializer.YouTubePlaylistItemSerializer
 import de.dargmuesli.spotilist.util.serializer.YouTubePlaylistSerializer
-import javafx.collections.FXCollections.observableHashMap
-import javafx.collections.MapChangeListener
-import javafx.collections.ObservableMap
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import org.mapdb.DB
 
-
-@Serializable(with = YouTubeCache.Serializer::class)
 object YouTubeCache : IProviderCache<Playlist, PlaylistItem> {
-    override var playlistData: ObservableMap<String, Playlist> = observableHashMap()
-    override var playlistItemData: ObservableMap<String, PlaylistItem> = observableHashMap()
-    override var playlistItemMap: ObservableMap<String, MutableList<String>> = observableHashMap()
+    override var playlistData: MutableMap<String, Playlist> = mutableMapOf()
+    override var playlistItemData: MutableMap<String, PlaylistItem> = mutableMapOf()
+    override var playlistItemMap: MutableMap<String, MutableList<String>> = mutableMapOf()
 
-    object Serializer : KSerializer<YouTubeCache> {
-        override val descriptor: SerialDescriptor = YouTubeCacheSurrogate.serializer().descriptor
-
-        override fun serialize(encoder: Encoder, value: YouTubeCache) {
-            encoder.encodeSerializableValue(
-                YouTubeCacheSurrogate.serializer(),
-                YouTubeCacheSurrogate(
-                    playlistData.toMap(), playlistItemData.toMap(), playlistItemMap.toMap()
-                )
-            )
-        }
-
-        override fun deserialize(decoder: Decoder): YouTubeCache {
-            val youTubeCache = decoder.decodeSerializableValue(YouTubeCacheSurrogate.serializer())
-            playlistData.putAll(youTubeCache.playlistData)
-            playlistItemData.putAll(youTubeCache.playlistItemData)
-            playlistItemMap.putAll(youTubeCache.playlistItemMap)
-            return YouTubeCache
-        }
+    fun open(db: DB) {
+        playlistData = MapDbBackedMap(
+            db, "youtube.playlistData",
+            encode = { format.encodeToString(YouTubePlaylistSerializer.Serializer, it) },
+            decode = { format.decodeFromString(YouTubePlaylistSerializer.Serializer, it) }
+        )
+        playlistItemData = MapDbBackedMap(
+            db, "youtube.playlistItemData",
+            encode = { format.encodeToString(YouTubePlaylistItemSerializer.Serializer, it) },
+            decode = { format.decodeFromString(YouTubePlaylistItemSerializer.Serializer, it) }
+        )
+        playlistItemMap = MapDbBackedMap(
+            db, "youtube.playlistItemMap",
+            encode = { format.encodeToString(ListSerializer(String.serializer()), it) },
+            decode = { format.decodeFromString(ListSerializer(String.serializer()), it).toMutableList() }
+        )
     }
-
-    @Serializable
-    @SerialName("YouTubeCache")
-    private data class YouTubeCacheSurrogate(
-        val playlistData: Map<String, @Serializable(with = YouTubePlaylistSerializer.Serializer::class) Playlist>,
-        val playlistItemData: Map<String, @Serializable(with = YouTubePlaylistItemSerializer.Serializer::class) PlaylistItem>,
-        val playlistItemMap: Map<String, MutableList<String>>
-    )
 }

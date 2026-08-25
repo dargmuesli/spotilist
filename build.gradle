@@ -24,6 +24,7 @@ ext {
     kotlinCoroutineVersion = '1.11.0'
     kotlinSerializationVersion = '1.11.0'
     log4jVersion = '2.26.1'
+    mapdbVersion = '3.1.0'
     mp3agicVersion = '0.9.1'
     spotifyWebApiJavaVersion = '9.4.0'
 }
@@ -63,6 +64,7 @@ dependencies {
     implementation "com.google.apis:google-api-services-youtube:$googleApiYouTubeVersion"
     implementation "com.mpatric:mp3agic:$mp3agicVersion"
     implementation "io.insert-koin:koin-core:$koinVersion"
+    implementation "org.mapdb:mapdb:$mapdbVersion"
     implementation "org.apache.logging.log4j:log4j-api:$log4jVersion"
     implementation "org.apache.logging.log4j:log4j-core:$log4jVersion"
     implementation "org.apache.logging.log4j:log4j-slf4j2-impl:$log4jVersion"

@@ -14,6 +14,7 @@ open module de.dargmuesli.spotilist {
     requires kotlinx.coroutines.javafx;
     requires kotlinx.serialization.core;
     requires kotlinx.serialization.json;
+    requires mapdb;
     requires mp3agic;
     requires org.apache.logging.log4j;
     requires org.kordamp.ikonli.javafx;
