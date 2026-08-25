@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.nio.file.Paths
 
-object FileSystemProvider : ISpotilistProvider<File, File> {
+class FileSystemProvider : ISpotilistProvider<File, File> {
     private val LOGGER = LogManager.getLogger()
 
     override fun getProviderPlaylist(playlistId: String): File? {

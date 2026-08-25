@@ -13,7 +13,7 @@ import se.michaelthelin.spotify.enums.AlbumType
 import java.util.*
 
 
-object SpotifyProvider :
+class SpotifyProvider :
     ISpotilistProviderAuthorizable<se.michaelthelin.spotify.model_objects.specification.Playlist, se.michaelthelin.spotify.model_objects.specification.PlaylistTrack> {
     private val LOGGER = LogManager.getLogger()
     private val PLAYLIST_ID_REGEX = Regex("^[a-zA-Z\\d]{22}$")
