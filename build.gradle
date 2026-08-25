@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id 'application'
-    id 'org.beryx.jlink' version '4.1.1'
+    id 'org.beryx.jlink' version '4.1.0'
     id 'org.javamodularity.moduleplugin' version '2.0.1'
     id 'org.jetbrains.kotlin.jvm' version '2.4.10'
     id 'org.jetbrains.kotlin.plugin.serialization' version '2.4.10'
@@ -25,6 +25,7 @@ ext {
     kotlinSerializationVersion = '1.11.0'
     log4jVersion = '2.26.1'
     mp3agicVersion = '0.9.1'
+    sqliteJdbcVersion = '3.53.2.1'
     spotifyWebApiJavaVersion = '9.4.0'
 }
 
@@ -38,6 +39,7 @@ java {
 application {
     mainModule = 'de.dargmuesli.spotilist'
     mainClass = 'de.dargmuesli.spotilist.MainApp'
+    applicationDefaultJvmArgs = ['--enable-native-access=org.xerial.sqlitejdbc']
 }
 
 jlink {
@@ -45,6 +47,7 @@ jlink {
     forceMerge 'kotlin-stdlib', 'annotations'
     launcher {
         name = 'spotilist'
+        jvmArgs = ['--enable-native-access=org.xerial.sqlitejdbc']
     }
 }
 
@@ -70,6 +73,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerializationVersion"
     implementation "org.kordamp.ikonli:ikonli-fontawesome5-pack:$ikonliVersion"
     implementation "org.kordamp.ikonli:ikonli-javafx:$ikonliVersion"
+    implementation "org.xerial:sqlite-jdbc:$sqliteJdbcVersion"
     implementation "se.michaelthelin.spotify:spotify-web-api-java:$spotifyWebApiJavaVersion"
 
     testImplementation "io.insert-koin:koin-test:$koinVersion"
