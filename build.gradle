@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id 'application'
-    id 'org.beryx.jlink' version '4.1.0'
+    id 'org.beryx.jlink' version '4.1.1'
     id 'org.javamodularity.moduleplugin' version '2.0.1'
     id 'org.jetbrains.kotlin.jvm' version '2.4.10'
     id 'org.jetbrains.kotlin.plugin.serialization' version '2.4.10'
