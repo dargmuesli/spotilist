@@ -1,6 +1,7 @@
 package de.dargmuesli.spotilist.ui.controllers
 
 import de.dargmuesli.spotilist.persistence.cache.SpotifyCache
+import de.dargmuesli.spotilist.persistence.config.ExportConfig
 import de.dargmuesli.spotilist.persistence.config.SpotifyConfig
 import de.dargmuesli.spotilist.persistence.config.YouTubeConfig
 import de.dargmuesli.spotilist.providers.util.SpotifyUtil
@@ -39,12 +40,20 @@ class SettingsController : Initializable {
     @FXML
     private lateinit var youTubeApiKeyTextField: TextField
 
+    @FXML
+    private lateinit var exportDirectoryTextField: TextField
+
+    @FXML
+    private lateinit var exportTrackPathPrefixTextField: TextField
+
     override fun initialize(url: URL?, rb: ResourceBundle?) {
         spotifyClientIdTextField.text = SpotifyConfig.clientId.value
         spotifyClientSecretTextField.text = SpotifyConfig.clientSecret.value
         spotifyRedirectUriTextField.text = SpotifyConfig.redirectUri.value
         spotifyAuthorizationCodeTextField.text = SpotifyConfig.authorizationCode.value
         youTubeApiKeyTextField.text = YouTubeConfig.apiKey.value
+        exportDirectoryTextField.text = ExportConfig.directory.value
+        exportTrackPathPrefixTextField.text = ExportConfig.trackPathPrefix.value
 
         SpotifyConfig.clientId.addListener { _ ->
             updateAuthorizationButton()
@@ -107,6 +116,16 @@ class SettingsController : Initializable {
     @FXML
     private fun onYouTubeApiKeyInput() {
         YouTubeConfig.apiKey.set(youTubeApiKeyTextField.text)
+    }
+
+    @FXML
+    private fun onExportDirectoryInput() {
+        ExportConfig.directory.set(exportDirectoryTextField.text)
+    }
+
+    @FXML
+    private fun onExportTrackPathPrefixInput() {
+        ExportConfig.trackPathPrefix.set(exportTrackPathPrefixTextField.text)
     }
 
     @FXML

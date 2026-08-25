@@ -20,8 +20,6 @@ object PlaylistReportService {
 
     private const val LIKED_SONGS_NAME = "Liked Songs"
     private const val LIKED_SONGS_PLAYLIST_ID = "4P9gkeY7Pd8EXn4IijePlE"
-    private const val EXPORT_TRACK_PREFIX = "M:\\Quellen\\Spotify\\"
-    private const val EXPORT_DIRECTORY = "/run/media/jonas/music/Playlists/Spotilist/"
 
     fun generateReport() {
         syncLikedSongsToTargets()
@@ -147,6 +145,15 @@ object PlaylistReportService {
     }
 
     private fun exportM3uFiles() {
+        val exportDirectory = SpotilistConfig.export.directory.value
+
+        if (exportDirectory.isNullOrBlank()) {
+            LOGGER.warn("Skipping m3u export: no export directory configured in settings.")
+            return
+        }
+
+        val trackPathPrefix = SpotilistConfig.export.trackPathPrefix.value.orEmpty()
+
         LOGGER.info("Generating m3u files:")
 
         for (playlistMapping in SpotilistConfig.playlistMappings) {
@@ -157,11 +164,11 @@ object PlaylistReportService {
             if (targetPlaylist.name == LIKED_SONGS_NAME) continue
 
             val targetLines = targetPlaylist.tracks
-                ?.map { track -> EXPORT_TRACK_PREFIX + track.matchKey() + ".mp3" }
+                ?.map { track -> trackPathPrefix + track.matchKey() + ".mp3" }
                 ?.reduce { acc, s -> acc + "\n" + s } ?: continue
 
             targetPlaylist.name?.let {
-                File(EXPORT_DIRECTORY + Util.getValidFilename(it) + ".m3u").writeText(targetLines)
+                File(exportDirectory, Util.getValidFilename(it) + ".m3u").writeText(targetLines)
             }
         }
     }
