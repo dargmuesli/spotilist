@@ -19,7 +19,7 @@ ext {
     googleApiYouTubeVersion = 'v3-rev20260820-2.0.0'
     ikonliVersion = '12.4.0'
     junitVersion = '6.1.3'
-    koinVersion = '4.2.0'
+    koinVersion = '4.2.2'
     kotlinCoroutineVersion = '1.11.0'
     kotlinSerializationVersion = '1.11.0'
     log4jVersion = '2.26.1'
