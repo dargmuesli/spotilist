@@ -10,19 +10,11 @@ import de.dargmuesli.spotilist.models.music.Track
 import de.dargmuesli.spotilist.persistence.cache.YouTubeCache
 import de.dargmuesli.spotilist.persistence.config.YouTubeConfig
 import de.dargmuesli.spotilist.providers.ISpotilistProviderAuthorizable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.javafx.JavaFx
-import kotlinx.coroutines.javafx.JavaFxDispatcher
 import org.apache.logging.log4j.LogManager
 
 
 class YouTubeProvider :
-    ISpotilistProviderAuthorizable<com.google.api.services.youtube.model.Playlist, com.google.api.services.youtube.model.PlaylistItem>,
-    CoroutineScope {
-    override val coroutineContext: JavaFxDispatcher
-        get() = Dispatchers.JavaFx
-
+    ISpotilistProviderAuthorizable<com.google.api.services.youtube.model.Playlist, com.google.api.services.youtube.model.PlaylistItem> {
     private val JSON_FACTORY = GsonFactory()
     private val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
     private val YOUTUBE = YouTube.Builder(HTTP_TRANSPORT, JSON_FACTORY, null)

@@ -5,11 +5,18 @@ import de.dargmuesli.spotilist.persistence.config.ExportConfig
 import de.dargmuesli.spotilist.persistence.config.SpotifyConfig
 import de.dargmuesli.spotilist.persistence.config.YouTubeConfig
 import de.dargmuesli.spotilist.providers.util.SpotifyUtil
+import de.dargmuesli.spotilist.ui.SpotilistNotification
 import javafx.fxml.FXML
 import javafx.fxml.Initializable
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.control.TextField
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.javafx.JavaFxDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
@@ -17,7 +24,9 @@ import java.net.URL
 import java.util.*
 
 
-class SettingsController : Initializable {
+class SettingsController : Initializable, CoroutineScope {
+    override val coroutineContext: JavaFxDispatcher
+        get() = Dispatchers.JavaFx
 
     @FXML
     private lateinit var spotifyClientIdTextField: TextField
@@ -130,10 +139,22 @@ class SettingsController : Initializable {
 
     @FXML
     private fun openAuthorization() {
-        SpotifyUtil.authorize()
+        openAuthorizationButton.isDisable = true
 
-        if (SpotifyCache.accessTokenExpiresAt.value > Date().time / 1000) {
-            SpotifyConfig.authorizationCode.set("")
+        launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    SpotifyUtil.authorize()
+                }
+
+                if (SpotifyCache.accessTokenExpiresAt.value > Date().time / 1000) {
+                    SpotifyConfig.authorizationCode.set("")
+                }
+            } catch (e: Exception) {
+                SpotilistNotification.error("Spotify authorization failed!", e)
+            } finally {
+                updateAuthorizationButton()
+            }
         }
     }
 

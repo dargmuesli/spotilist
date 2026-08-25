@@ -4,6 +4,7 @@ import de.dargmuesli.spotilist.MainApp
 import de.dargmuesli.spotilist.models.PlaylistMapping
 import de.dargmuesli.spotilist.persistence.SpotilistConfig
 import de.dargmuesli.spotilist.service.PlaylistReportService
+import de.dargmuesli.spotilist.ui.SpotilistNotification
 import de.dargmuesli.spotilist.ui.SpotilistStage
 import javafx.collections.ListChangeListener
 import javafx.event.ActionEvent
@@ -13,12 +14,21 @@ import javafx.fxml.Initializable
 import javafx.scene.control.Accordion
 import javafx.scene.control.Button
 import javafx.stage.Modality
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.javafx.JavaFxDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.net.URL
 import java.util.*
 
-class DashboardController : Initializable {
+class DashboardController : Initializable, CoroutineScope {
+    override val coroutineContext: JavaFxDispatcher
+        get() = Dispatchers.JavaFx
+
     companion object {
         val LOGGER: Logger = LogManager.getLogger()
     }
@@ -67,6 +77,18 @@ class DashboardController : Initializable {
     }
 
     fun generateReport(actionEvent: ActionEvent) {
-        PlaylistReportService.generateReport()
+        reportGenerateButton.isDisable = true
+
+        launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    PlaylistReportService.generateReport()
+                }
+            } catch (e: Exception) {
+                SpotilistNotification.error("Generating the report failed!", e)
+            } finally {
+                reportGenerateButton.isDisable = false
+            }
+        }
     }
 }
