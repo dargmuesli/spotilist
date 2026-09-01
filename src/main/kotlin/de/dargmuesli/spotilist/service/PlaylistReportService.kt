@@ -61,8 +61,8 @@ object PlaylistReportService {
     }
 
     private fun createMissingTracksPlaylist(notFound: List<Track>) {
-        val currentUserProfile = spotifyApi.currentUsersProfile.build().execute()
-        val playlist = spotifyApi.createPlaylist(currentUserProfile.id, "TODO (Date)").public_(false).build().execute()
+        // createPlaylist always targets the current user now, so the profile lookup that supplied the owner id is one request we no longer have to make.
+        val playlist = spotifyApi.createPlaylist("TODO (Date)").public_(false).build().execute()
 
         notFound.map { "spotify:track:" + it.id }.chunked(100).forEach { chunk ->
             spotifyApi.addItemsToPlaylist(playlist.id, JsonParser.parseString(Gson().toJson(chunk)).asJsonArray)

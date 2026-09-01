@@ -8,14 +8,11 @@ import de.dargmuesli.spotilist.persistence.cache.SpotifyCache
 import de.dargmuesli.spotilist.providers.ISpotilistProviderAuthorizable
 import de.dargmuesli.spotilist.providers.util.SpotifyUtil.getAllPagingItems
 import de.dargmuesli.spotilist.providers.util.SpotifyUtil.spotifyApi
-import org.apache.logging.log4j.LogManager
-import se.michaelthelin.spotify.enums.AlbumType
 import java.util.*
 
 
 class SpotifyProvider :
     ISpotilistProviderAuthorizable<se.michaelthelin.spotify.model_objects.specification.Playlist, se.michaelthelin.spotify.model_objects.specification.PlaylistTrack> {
-    private val LOGGER = LogManager.getLogger()
     private val PLAYLIST_ID_REGEX = Regex("^[a-zA-Z\\d]{22}$")
 
     override fun getProviderPlaylist(playlistId: String): se.michaelthelin.spotify.model_objects.specification.Playlist? {
@@ -34,7 +31,7 @@ class SpotifyProvider :
                 SpotifyCache.playlistItemData[it]!!
             }
         } else {
-            getAllPagingItems(spotifyApi.getPlaylistsItems(playlistId))
+            getAllPagingItems(spotifyApi.getPlaylistItems(playlistId))
                 .ifEmpty { null }
                 ?.also {
                     if (SpotifyCache.playlistItemMap.containsKey(playlistId)) {
@@ -42,15 +39,15 @@ class SpotifyProvider :
                     }
                 }
                 ?.onEach {
-                    if (!SpotifyCache.playlistItemData.containsKey(it.track.id)) {
-                        SpotifyCache.playlistItemData[it.track.id] = it
+                    if (!SpotifyCache.playlistItemData.containsKey(it.item.id)) {
+                        SpotifyCache.playlistItemData[it.item.id] = it
                     }
 
                     if (!SpotifyCache.playlistItemMap.containsKey(playlistId)) {
                         SpotifyCache.playlistItemMap[playlistId] = mutableListOf()
                     }
 
-                    SpotifyCache.playlistItemMap[playlistId]!!.add(it.track.id)
+                    SpotifyCache.playlistItemMap[playlistId]!!.add(it.item.id)
                 }
         }
     }
@@ -64,15 +61,11 @@ class SpotifyProvider :
         val spotifyPlaylistItems = getProviderPlaylistItems(playlistId) ?: return null
 
         return spotifyPlaylistItems.map { spotifyPlaylistTrack: se.michaelthelin.spotify.model_objects.specification.PlaylistTrack ->
-            val track = spotifyPlaylistTrack.track as se.michaelthelin.spotify.model_objects.specification.Track
-
-            if (track.linkedFrom != null) {
-                LOGGER.warn(track.name + "might differ! " + track.linkedFrom.id)
-            }
+            val track = spotifyPlaylistTrack.item as se.michaelthelin.spotify.model_objects.specification.Track
 
             Track(
                 album = Album(
-                    albumType = AlbumType.valueOf(track.album.albumType.name),
+                    albumType = track.album.albumType,
                     artists = track.album.artists.map { artistSimplified ->
                         Artist(name = artistSimplified.name)
                     },
@@ -81,9 +74,9 @@ class SpotifyProvider :
                 artists = track.artists.map { artistSimplified ->
                     Artist(name = artistSimplified.name)
                 },
-                durationMs = spotifyPlaylistTrack.track.durationMs.toLong(),
-                id = spotifyPlaylistTrack.track.id,
-                name = spotifyPlaylistTrack.track.name
+                durationMs = track.durationMs.toLong(),
+                id = track.id,
+                name = track.name
             )
         }
     }
