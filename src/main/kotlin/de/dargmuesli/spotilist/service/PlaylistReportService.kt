@@ -2,6 +2,7 @@ package de.dargmuesli.spotilist.service
 
 import com.google.gson.Gson
 import com.google.gson.JsonParser
+import de.dargmuesli.spotilist.MainApp
 import de.dargmuesli.spotilist.models.PlaylistMappingResource
 import de.dargmuesli.spotilist.models.music.Playlist
 import de.dargmuesli.spotilist.models.music.Track
@@ -12,6 +13,7 @@ import de.dargmuesli.spotilist.util.Util
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.File
+import java.time.Instant
 
 /** Compares playlist mappings across providers and reports/exports the differences found. */
 object PlaylistReportService {
@@ -55,14 +57,19 @@ object PlaylistReportService {
                     }"
                 )
 
-                createMissingTracksPlaylist(notFound)
+                createMissingTracksPlaylist(targetPlaylist.name, notFound)
             }
         }
     }
 
-    private fun createMissingTracksPlaylist(notFound: List<Track>) {
+    private fun createMissingTracksPlaylist(targetName: String?, notFound: List<Track>) {
+        // The target name says which mapping a playlist came from, the epoch second which run.
+        // A missing or blank target name is left out instead of becoming an empty segment.
+        val name = listOfNotNull(MainApp.APPLICATION_TITLE, targetName?.ifBlank { null }, Instant.now().epochSecond)
+            .joinToString(" | ")
+
         // createPlaylist always targets the current user now, so the profile lookup that supplied the owner id is one request we no longer have to make.
-        val playlist = spotifyApi.createPlaylist("TODO (Date)").public_(false).build().execute()
+        val playlist = spotifyApi.createPlaylist(name).public_(false).build().execute()
 
         notFound.map { "spotify:track:" + it.id }.chunked(100).forEach { chunk ->
             spotifyApi.addItemsToPlaylist(playlist.id, JsonParser.parseString(Gson().toJson(chunk)).asJsonArray)
