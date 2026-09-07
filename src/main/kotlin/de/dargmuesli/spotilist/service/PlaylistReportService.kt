@@ -51,7 +51,7 @@ object PlaylistReportService {
             } else {
                 LOGGER.info(
                     "In \"${sourcePlaylist.name}\" (${sourceTracks.size}), but not in \"${targetPlaylist.name}\" (${targetPlaylist.tracks?.size}):\n${
-                        notFound.joinToString("\n") { "${it.name} (${it.id})" }
+                        notFound.joinToString("\n") { "${it.matchKey()} (${it.id})" }
                     }"
                 )
 
@@ -138,7 +138,7 @@ object PlaylistReportService {
             LOGGER.info("All \"Liked Songs\" are in a playlist.")
         } else {
             LOGGER.info(
-                "In \"Liked Songs\", but not in any playlist:\n${notFoundTracks.joinToString("\n") { "${it.name} (${it.id})" }}"
+                "In \"Liked Songs\", but not in any playlist:\n${notFoundTracks.joinToString("\n") { "${it.matchKey()} (${it.id})" }}"
             )
         }
     }
