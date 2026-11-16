@@ -13,7 +13,7 @@ Spotilist is a desktop app that keeps playlists in sync across Spotify, YouTube 
 
 ## Requirements
 
-- Java 17 (JDK)
+- Java 25 (JDK)
 - A Spotify [app](https://developer.spotify.com/dashboard) (Client ID, Client Secret and a redirect URI), if you want to sync with Spotify
 - A YouTube Data API v3 key from the [Google Cloud Console](https://console.cloud.google.com/), if you want to sync with YouTube
 

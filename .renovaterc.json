@@ -1,4 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>dargmuesli/renovate-config"]
+  "extends": ["github>dargmuesli/renovate-config"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^build\\.gradle$/"],
+      "matchStrings": ["javafx \\{\\s*version = '(?<currentValue>[^']+)'"],
+      "depNameTemplate": "org.openjfx:javafx-base",
+      "datasourceTemplate": "maven"
+    }
+  ]
 }
