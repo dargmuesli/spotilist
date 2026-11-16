@@ -9,5 +9,12 @@
       "depNameTemplate": "org.openjfx:javafx-base",
       "datasourceTemplate": "maven"
     }
+  ],
+  "packageRules": [
+    {
+      "description": "maven versioning does not treat JavaFX early-access builds as unstable",
+      "matchPackageNames": ["org.openjfx:javafx-base"],
+      "allowedVersions": "!/-ea\\+/"
+    }
   ]
 }
