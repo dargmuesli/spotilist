@@ -30,8 +30,8 @@ ext {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 
     modularity.inferModulePath = false // https://github.com/openjfx/javafx-gradle-plugin/pull/154/files
 }
@@ -53,12 +53,12 @@ jlink {
 
 kotlin {
     compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
+        jvmTarget = JvmTarget.JVM_25
     }
 }
 
 javafx {
-    version = '21.0.8'
+    version = '27.0.1'
     modules = ['javafx.controls', 'javafx.fxml']
 }
 
