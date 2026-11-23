@@ -1,7 +1,5 @@
 package de.dargmuesli.spotilist.service
 
-import com.google.gson.Gson
-import com.google.gson.JsonParser
 import de.dargmuesli.spotilist.MainApp
 import de.dargmuesli.spotilist.models.PlaylistMappingResource
 import de.dargmuesli.spotilist.models.music.Playlist
@@ -72,7 +70,7 @@ object PlaylistReportService {
         val playlist = spotifyApi.createPlaylist(name).public_(false).build().execute()
 
         notFound.map { "spotify:track:" + it.id }.chunked(100).forEach { chunk ->
-            spotifyApi.addItemsToPlaylist(playlist.id, JsonParser.parseString(Gson().toJson(chunk)).asJsonArray)
+            spotifyApi.addItemsToPlaylist(playlist.id).uris(chunk)
                 .build().execute()
         }
     }
